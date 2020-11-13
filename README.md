@@ -11,5 +11,5 @@ ___
 - [TomoPy_test01.ipynb](TomoPy_test01.ipynb)
     - Complete TomoPy reconstruction pipeline on (small) TOMCAT sample data
     - Absorption recon
-    - Opens Fiji for visualization of results using ImageJ plugin 
+    - Opens Fiji for visualization of results using ImageJ macro [FolderOpener_virtual.ijm](https://gitlab.com/sesame_beats/imagej_utils/-/blob/master/macros/FolderOpener_virtual.ijm)
     - Optimization of Center Of Rotation
