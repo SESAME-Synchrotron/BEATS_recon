@@ -29,7 +29,8 @@ def main():
     # data = dxchange.reader.read_tiff_stack(args.filein, ind=[560, 561, 562, 563, 564])
 
     # load using tifffile
-    tifffiles = [os.path.join(os.path.dirname(args.filein), f) for f in os.listdir(os.path.dirname(args.filein)) if os.path.isfile(os.path.join(os.path.dirname(args.filein), f))]
+    tifffiles = [os.path.join(os.path.dirname(args.filein), f) for f in os.listdir(os.path.dirname(args.filein))
+                     if os.path.isfile(os.path.join(os.path.dirname(args.filein), f))]
     tifffiles.sort()
     data = tifffile.imread(tifffiles)
 
