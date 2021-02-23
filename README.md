@@ -8,24 +8,29 @@ A dataset for running these tests can be found [here](https://sesamejo-my.sharep
 #### LEVEL 1 - beginner
 - [x] **absorption** reco
 - [x] **read HDF5**
-- [ ] **phase retrieval**
 - [x] **COR** optimization
 - [x] write **output TIFF stack** of slices
-- [ ] **360deg reco** (extended Field Of View)
 - [x] circular mask
-- [ ] **Ring removal** algorithms
+- [x] control **bitdepth** of output slices
+- [x] **phase retrieval** algorithms in TomoPy
+- [ ] store and load **config files**
+- [ ] phase retrieval with **PyPhase**
+- [ ] **tomopy-cli** full recon
+- [ ] **360deg reco** (extended Field Of View)
+- [ ] test different **Ring removal** algorithms
+- [ ] test different **Filters**
 #### LEVEL 2 - intermediate
 - [ ] **HPC cluster** TomoPy build
 - [ ] **MP reco**
 - [ ] **GPU reco**
 #### LEVEL 3 - expert
-- [ ] **batch reco** from .CSV table using pandas
+- [ ] TomoPy reco **GUI**
 - [ ] print **reco report** (Latex)
-- [ ] reco from **config file**
-
+- [ ] **batch reco** from .CSV table using pandas
+- [ ] batch reco from **config file**
 ___
 ### Notebooks of TomoPy tests:
-- [TomoPy_test01.ipynb](TomoPy_test01.ipynb)
+- [TomoPy_test01.ipynb](examples/TomoPy_test01.ipynb)
     - Complete TomoPy reconstruction pipeline on (small) TOMCAT sample data
     - Absorption reco
     - Opens Fiji for visualization of results using ImageJ macro [FolderOpener_virtual.ijm](https://gitlab.com/sesame_beats/imagej_utils/-/blob/master/macros/FolderOpener_virtual.ijm)
