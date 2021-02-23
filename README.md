@@ -30,8 +30,10 @@ A dataset for running these tests can be found [here](https://sesamejo-my.sharep
 - [ ] batch reco from **config file**
 ___
 ### Notebooks of TomoPy tests:
-- [TomoPy_test01.ipynb](examples/TomoPy_test01.ipynb)
+- [TomoPy TEST 01](examples/TomoPy_test01.ipynb)
     - Complete TomoPy reconstruction pipeline on (small) TOMCAT sample data
     - Absorption reco
     - Opens Fiji for visualization of results using ImageJ macro [FolderOpener_virtual.ijm](https://gitlab.com/sesame_beats/imagej_utils/-/blob/master/macros/FolderOpener_virtual.ijm)
     - Optimization of Center Of Rotation
+- [TomoPy TEST 2](examples/phase_retrieval/TomoPy_test02_PhaseRetrieval_TomoPy.ipynb)
+    - Phase retrieval recon (Paganin) using TomoPy
