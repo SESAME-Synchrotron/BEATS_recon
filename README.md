@@ -26,8 +26,7 @@ A dataset for running these tests can be found [here](https://sesamejo-my.sharep
 #### LEVEL 3 - expert
 - [ ] TomoPy reco **GUI**
 - [ ] print **reco report** (Latex)
-- [ ] **batch reco** from .CSV table using pandas
-- [ ] batch reco from **config file**
+- [ ] **batch reco** from .CSV table using pandas (through config files)
 ___
 ### Notebooks of TomoPy tests:
 - [TomoPy TEST 01](examples/TomoPy_test01.ipynb)
