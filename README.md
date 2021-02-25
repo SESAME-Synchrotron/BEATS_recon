@@ -13,9 +13,9 @@ A dataset for running these tests can be found [here](https://sesamejo-my.sharep
 - [x] circular mask
 - [x] control **bitdepth** of output slices
 - [x] **phase retrieval** algorithms in TomoPy
-- [ ] store and load **config files**
+- [x] **tomopy-cli** full recon
+- [x] store and load **config files** for command line recon
 - [ ] phase retrieval with **PyPhase**
-- [ ] **tomopy-cli** full recon
 - [ ] **360deg reco** (extended Field Of View)
 - [ ] test different **Ring removal** algorithms
 - [ ] test different **Filters**
