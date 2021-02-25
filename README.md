@@ -37,3 +37,5 @@ ___
     - Optimization of Center Of Rotation
 - [TomoPy TEST 2](examples/phase_retrieval/TomoPy_test02_PhaseRetrieval_TomoPy.ipynb)
     - Phase retrieval recon (Paganin) using TomoPy
+- [TomoPy TEST 3](examples/TomoPy_test03_tomopy-cli.ipynb)
+    - Instructions for recon using the TomoPy Command Line Interface (tomopy-cli)
