@@ -49,3 +49,7 @@ recon = tomopy.circ_mask(recon, axis=0, ratio=0.95)
 # write output npy file
 fileout = path_recon+'recon_GPU.npy'
 np.save(fileout, recon)
+
+# write output slice as npy file
+fileout = path_recon+'slice200_GPU.npy'
+np.save(fileout, recon[200, :, :])
