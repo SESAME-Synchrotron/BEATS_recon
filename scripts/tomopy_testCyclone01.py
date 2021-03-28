@@ -2,8 +2,8 @@ import tomopy
 import dxchange
 import numpy as np
 import os
-from time import time
 import logging
+from time import time
 
 def touint8(data, quantiles=None):
     # scale data to uint8
@@ -28,21 +28,17 @@ def writemidplanesDxchange(data, filename_out):
         dxchange.writer.write_tiff(touint8(data[:, int(data.shape[1] / 2), :]), fname=filename + '_XZ.tiff', dtype='uint8')
         dxchange.writer.write_tiff(touint8(data[:, :, int(data.shape[2] / 2)]), fname=filename + '_YZ.tiff', dtype='uint8')
 
-# h5file = "/nvme/h/jo21gi1/data_p029/test_00_/test_00_.h5"
-# path_recon = "/nvme/h/jo21gi1/data_p029/test_00_/recon/"
+h5file = "/nvme/h/jo21gi1/data_p029/tomoData/8671_8_B_01_/test_00_.h5"
+path_recon = "/nvme/scratch/jo21gi1/recon/8671_8_B_01_/"
 # path_recon = "/nvme/h/jo21gi1/data_p029/test_00_/recon_phase/"
 
-h5file = "/home/gianthk/Data/StefanFly_test/test_00_/test_00_.h5"
-path_recon = "/home/gianthk/Data/StefanFly_test/test_00_/tmp/"
-
-logging.basicConfig(filename=path_recon+'recon.log', level=logging.DEBUG)
-
 time_start = time()
+logging.basicConfig(filename=path_recon+'recon.log', level=logging.DEBUG)
 
 # read projections, darks, flats and angles
 projs, flats, darks, theta = dxchange.read_aps_32id(h5file, exchange_rank=0)
 
-# If the angular information is not avaialable from the raw data you need to set the data collection angles.
+# If the angular information is not available from the raw data you need to set the data collection angles.
 # In this case, theta is set as equally spaced between 0-180 degrees.
 if theta is None:
     theta = tomopy.angles(projs.shape[0])
@@ -70,12 +66,11 @@ recon_uint8Range = tomopy.circ_mask(recon_uint8Range, axis=0, ratio=0.95)
 
 # write output stack of TIFFs as uint8
 fileout = path_recon+'data.tiff'
-# dxchange.writer.write_tiff_stack(recon_uint8Range, fname=fileout, dtype='uint8', axis=0, digit=5, start=0, overwrite=True)
+dxchange.writer.write_tiff_stack(recon_uint8Range, fname=fileout, dtype='uint8', axis=0, digit=5, start=0, overwrite=True)
 
 # write midplanes
 writemidplanesDxchange(recon_uint8Range, fileout)
 
 time_end = time()
 execution_time = time_end - time_start
-
 logging.info("Completed in {} s".format(str(execution_time)))
