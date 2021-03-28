@@ -28,8 +28,8 @@ def writemidplanesDxchange(data, filename_out):
         dxchange.writer.write_tiff(touint8(data[:, int(data.shape[1] / 2), :]), fname=filename + '_XZ.tiff', dtype='uint8')
         dxchange.writer.write_tiff(touint8(data[:, :, int(data.shape[2] / 2)]), fname=filename + '_YZ.tiff', dtype='uint8')
 
-h5file = "/nvme/h/jo21gi1/data_p029/tomoData/8671_8_B_01_/test_00_.h5"
-path_recon = "/nvme/scratch/jo21gi1/recon/8671_8_B_01_/"
+h5file = "/tmp/tomoData/8671_8_B_01_/test_00_.h5"
+path_recon = "/scratch/recon/8671_8_B_01_/"
 # path_recon = "/nvme/h/jo21gi1/data_p029/test_00_/recon_phase/"
 
 time_start = time()
