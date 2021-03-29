@@ -71,7 +71,6 @@ for alg in CPU_algorithms:
 
     # rescale GV range to uint8 from MIN and MAX of 3D data
     recon_uint8Range = touint8(recon)
-    del recon
 
     # apply again circ mask
     recon_uint8Range = tomopy.circ_mask(recon_uint8Range, axis=0, ratio=0.95)
@@ -80,4 +79,7 @@ for alg in CPU_algorithms:
     fileout = path_recon+alg
     # dxchange.writer.write_tiff_stack(recon_uint8Range, fname=fileout, dtype='uint8', axis=0, digit=5, start=0, overwrite=True)
     writemidplanesDxchange(recon_uint8Range, fileout)
+
+    del recon
+    del recon_uint8Range
 
