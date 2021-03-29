@@ -1,4 +1,4 @@
-# full TomoPy recon test on Cyclone
+# test tomopy.recon.rotation.find_center on Cyclone
 
 import tomopy
 import dxchange
@@ -46,32 +46,21 @@ if theta is None:
     theta = tomopy.angles(projs.shape[0])
 
 # flat-field correction
+logging.info("Flat-field correct.")
 projs = tomopy.normalize(projs, flats, darks)
 
 # - log transform
+logging.info("- log transform.")
 projs = tomopy.minus_log(projs)
 
 # auto detect Center Of Rotation (COR)
+logging.info("tomopy.find_center..")
 COR = tomopy.find_center(projs, theta, init=projs.shape[2]/2, tol=1)
+logging.info("Estimated COR is: {}".format(str(COR)))
 
-# CPU recon (GRIDREC)
-recon = tomopy.recon(projs, theta, center=COR, algorithm='gridrec', sinogram_order=False)
-
-# apply circular mask
-recon = tomopy.circ_mask(recon, axis=0, ratio=0.95)
-
-# rescale GV range to uint8 from MIN and MAX of 3D data
-recon_uint8Range = touint8(recon)
-
-# apply again circ mask
-recon_uint8Range = tomopy.circ_mask(recon_uint8Range, axis=0, ratio=0.95)
-
-# write output stack of TIFFs as uint8
-fileout = path_recon+'data.tiff'
-dxchange.writer.write_tiff_stack(recon_uint8Range, fname=fileout, dtype='uint8', axis=0, digit=5, start=0, overwrite=True)
-
-# write midplanes
-writemidplanesDxchange(recon_uint8Range, fileout)
+# write recon slices with different CORs
+logging.info("tomopy.write_center..")
+tomopy.write_center(projs, theta, dpath=path_recon+'COR', cen_range=[COR-10, COR+10, 1], ind=projs.shape[0]/2, mask=True, ratio=1.0, algorithm='gridrec', filter_name='parzen')
 
 time_end = time()
 execution_time = time_end - time_start
