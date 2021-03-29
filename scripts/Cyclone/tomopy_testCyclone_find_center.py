@@ -53,14 +53,18 @@ projs = tomopy.normalize(projs, flats, darks)
 logging.info("- log transform.")
 projs = tomopy.minus_log(projs)
 
-# auto detect Center Of Rotation (COR)
-logging.info("tomopy.find_center..")
-COR = tomopy.find_center(projs, theta, init=projs.shape[2]/2, tol=1)
+# # auto detect Center Of Rotation (COR)
+# logging.info("tomopy.find_center..")
+# COR = tomopy.find_center(projs, theta, init=projs.shape[2]//2, tol=1)
+
+# auto detect Center Of Rotation (COR) witn Vo method
+logging.info("tomopy.find_center_vo..")
+COR = tomopy.find_center_vo(projs)
 logging.info("Estimated COR is: {}".format(str(COR)))
 
 # write recon slices with different CORs
 logging.info("tomopy.write_center..")
-tomopy.write_center(projs, theta, dpath=path_recon+'COR', cen_range=[COR-10, COR+10, 1], ind=projs.shape[0]/2, mask=True, ratio=1.0, algorithm='gridrec', filter_name='parzen')
+tomopy.write_center(projs, theta, dpath=path_recon+'COR', cen_range=[COR-10, COR+10, 1], ind=projs.shape[0]//2, mask=True, ratio=1.0, algorithm='gridrec', filter_name='parzen')
 
 time_end = time()
 execution_time = time_end - time_start
