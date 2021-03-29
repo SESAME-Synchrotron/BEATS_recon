@@ -46,13 +46,23 @@ if theta is None:
     theta = tomopy.angles(projs.shape[0])
 
 # flat-field correction
+logging.info("Flat-field correct.")
 projs = tomopy.normalize(projs, flats, darks)
 
 # - log transform
+logging.info("- log transform.")
 projs = tomopy.minus_log(projs)
 
 # auto detect Center Of Rotation (COR)
-COR = tomopy.find_center(projs, theta, init=projs.shape[2]/2, tol=1)
+# logging.info("tomopy.find_center..")
+# COR = tomopy.find_center(projs, theta, init=projs.shape[2]/2, tol=1)
+
+# auto detect Center Of Rotation (COR) witn Vo method
+# logging.info("tomopy.find_center_vo..")
+# COR = tomopy.find_center_vo(projs)
+
+# COR was found with Vo method + manual inspection
+COR = 1303
 
 # CPU recon (GRIDREC)
 recon = tomopy.recon(projs, theta, center=COR, algorithm='gridrec', sinogram_order=False)
