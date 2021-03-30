@@ -1,0 +1,35 @@
+
+# Build TOMOPY Sigularity Container
+
+sudo singularity build --sandbox tomopy.sif docker://tomviz/tomopy-pipeline:latest
+sudo singularity shell --writable tomopy.sif
+
+apt update
+apt upgrade
+
+conda update --all
+conda install scikit-image
+conda install -c conda-forge dxchange
+
+apt autoremove
+apt autoclean
+
+conda clean --all
+
+
+
+# Run shell within container
+singularity shell --nv tomopy.sif
+
+
+# Run shell within container with GPU support
+singularity shell --nv production_tomopy.sif
+
+
+# Create production container
+sudo singularity build production_tomopy.sif tomopy.sif/
+
+
+# Run production with GPU support 
+singularity exec --nv production_tomopy.sif python beats_recostruction.py 
+
