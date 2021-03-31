@@ -18,48 +18,43 @@ path_recon = "data/recon_phase/"
 fout = "data/tiffs/reco.tiff"
 
 
-
 # read the full proj
 projs, flats, darks, theta = dxchange.read_aps_32id(h5file, exchange_rank=0)
-
-# read one projection every 10
-# projs, flats, darks, theta = dxchange.read_aps_32id(h5file, exchange_rank=0, proj=[1, 1000, 10])
-
-print(projs.shape[:])
-print(projs.dtype)
-
-
-
-
-plt.imshow(projs[200, :, :])
-# plt.show()
-
 
 
 if theta is None:
     theta = tomopy.angles(projs.shape[0])
 
 
-
-
 projs = tomopy.normalize(projs, flats, darks)
-# print(projs.dtype)
-
-
-
 projs = tomopy.minus_log(projs)
-
-plt.imshow(projs[:, 200, :])
-# plt.show()
 
 
 COR = tomopy.find_center(projs, theta, init=projs.shape[2]/2, ind=200, tol=0.5)
-print(COR)
 
 
-recon = tomopy.recon(projs, theta, center=COR, algorithm='gridrec', sinogram_order=False)
 
+extra_options = {'MinConstraint': 0}
+options = {
+    'proj_type': 'cuda',
+    'method': 'SIRT_CUDA',
+    'num_iter': 100,
+    'extra_options': extra_options
+}
+
+# options = {'proj_type': 'cuda', 'method': 'FBP_CUDA'}
+
+
+recon = tomopy.recon(projs,
+                     theta,
+                     center=COR,
+                     algorithm=tomopy.astra,
+                     options=options,
+                     ncore=1)
 recon = tomopy.circ_mask(recon, axis=0, ratio=0.95)
+
+#recon = tomopy.recon(projs, theta, center=COR, algorithm='gridrec', sinogram_order=False)
+#recon = tomopy.circ_mask(recon, axis=0, ratio=0.95)
 
 print(recon.shape)
 reco_plot = recon[200].reshape(recon.shape[1], recon.shape[2])
