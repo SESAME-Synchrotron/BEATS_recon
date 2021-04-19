@@ -1,0 +1,49 @@
+
+# Build TOMOPY Sigularity Container
+
+sudo singularity build --sandbox tomopy.sif docker://tomviz/tomopy-pipeline:latest
+sudo singularity shell --writable tomopy.sif
+
+apt update
+apt upgrade
+
+conda update --all
+conda install scikit-image
+conda install -c conda-forge dxchange
+conda install -c astra-toolbox/label/dev astra-toolbox
+
+apt autoremove
+apt autoclean
+
+conda clean --all
+
+# Install Tomopy CLI
+
+git clone https://github.com/tomography/tomopy-cli.git
+cd tomopy-cli/
+python setup.py install
+source /root/complete_tomopy.sh
+
+
+# Run shell within container
+singularity shell --nv tomopy.sif
+
+
+# Run shell within container with GPU support
+singularity shell --nv production_tomopy.sif
+
+
+# Create production container
+sudo singularity build production_tomopy.sif tomopy.sif/
+
+
+# Run production with GPU support 
+singularity exec --nv production_tomopy.sif python beats_recostruction.py 
+
+
+# CYCLONE allocate Node with GPU
+salloc -N 1 --gres=gpu:2 -t 01:00:00
+
+
+export SINGULARITY_BINDPATH="/onyx/data/p028/data/,/nvme/h/cchrysostomou:/mnt"
+singularity exec --nv production_tomopy.sif python beats_recostruction.py
