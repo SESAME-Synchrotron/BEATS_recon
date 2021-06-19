@@ -1,4 +1,5 @@
 #!/bin/sh
+#SBATCH --job-name=recon_test    # Job name
 #SBATCH --nodes=1
 #SBATCH –-ntasks-per-node=10
 
