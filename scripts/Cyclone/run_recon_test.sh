@@ -1,7 +1,5 @@
 #!/bin/sh
-#SBATCH --job-name=recon_test    # Job name
-#SBATCH --nodes=1
-#SBATCH –-ntasks-per-node=10
+#SBATCH --mem-per-cpu=8000
 
 export SINGULARITY_HOME=$HOME:/home
 export SINGULARITY_BINDPATH="/onyx/data/p029:/data,/nvme/h/jo21gi1/code:/code,/nvme/h/jo21gi1/scratch:/scratch"

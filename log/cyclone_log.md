@@ -51,5 +51,10 @@ Modify the conf file as needed..
 #### Recon script (tomopy-cli)
 ``
 
+----
+### SBATCH OPTIONS
+- `#SBATCH --job-name=recon_test    # Job name`
+- `#SBATCH --nodes=1`
+- `#SBATCH –-ntasks-per-node=10`
 
 
