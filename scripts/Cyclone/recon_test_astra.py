@@ -5,6 +5,7 @@ import dxchange
 import numpy as np
 import os
 import logging
+import tifffile
 from time import time
 
 def touint8(data, quantiles=None):
@@ -30,7 +31,10 @@ def writemidplanesDxchange(data, filename_out):
         dxchange.writer.write_tiff(touint8(data[:, int(data.shape[1] / 2), :]), fname=filename + '_XZ.tiff', dtype='uint8')
         dxchange.writer.write_tiff(touint8(data[:, :, int(data.shape[2] / 2)]), fname=filename + '_YZ.tiff', dtype='uint8')
 
-algorithm = 'sirt'
+# algorithm = 'astra_sart'
+# algorithm = 'astra_fbp'
+# algorithm = 'astra_fbp'
+algorithm = 'astra_fbp_cuda'
 
 # h5file = "/tmp/tomoData/8671_8_B_01_/8671_8_B_01_.h5"
 h5file = "/data/test_00_/test_00_.h5"
@@ -69,15 +73,19 @@ projs = tomopy.minus_log(projs)
 # COR = 1303
 COR = 486.5
 
-# CPU recon (GRIDREC)
-recon = tomopy.recon(projs, theta, center=COR, algorithm=algorithm, sinogram_order=False)
+# CPU recon
+# recon = tomopy.recon(projs, theta, center=COR, algorithm=algorithm, sinogram_order=False)
+# options = {'method':'SART', 'num_iter':10*180, 'proj_type':'linear', 'extra_options':{'MinConstraint':0}}
+# options = {'proj_type': 'strip', 'method': 'FBP'}
+options = {'proj_type': 'cuda', 'method': 'FBP_CUDA'}
+recon = tomopy.recon(projs, theta, center=COR, algorithm=tomopy.astra, options=options, ncore=1)
 
 # # apply circular mask
-# recon = tomopy.circ_mask(recon, axis=0, ratio=0.95)
-#
-# # rescale GV range to uint8 from MIN and MAX of 3D data
-# recon_uint8Range = touint8(recon)
-#
+recon = tomopy.circ_mask(recon, axis=0, ratio=0.95)
+
+# rescale GV range to uint8 from MIN and MAX of 3D data
+# recon = touint8(recon)
+
 # # apply again circ mask
 # recon_uint8Range = tomopy.circ_mask(recon_uint8Range, axis=0, ratio=0.95)
 #
@@ -87,9 +95,12 @@ recon = tomopy.recon(projs, theta, center=COR, algorithm=algorithm, sinogram_ord
 
 # write tiff slice with dxchange
 fileout = path_recon+'slice.tiff'
+# recon = recon.astype('float32')
 dxchange.writer.write_tiff(recon[int(recon.shape[0] / 2), :, :], fname=path_recon+'sliceXY.tiff')
 dxchange.writer.write_tiff(recon[:, int(recon.shape[1] / 2), :], fname=path_recon+'sliceXZ.tiff')
 dxchange.writer.write_tiff(recon[:, :, int(recon.shape[2] / 2)], fname=path_recon+'sliceYZ.tiff')
+
+# tifffile.imsave(fileout, recon[int(recon.shape[0] / 2), :, :])
 
 # write midplanes
 # writemidplanesDxchange(recon_uint8Range, fileout)

@@ -20,11 +20,14 @@ ______________________________________
 ______________________________________
 ### SINGULARITY
 #### Preliminary operations with Singularity
-setup home and data folders
-
+setup home folder <br/>
 `export SINGULARITY_HOME=$HOME:/home`
 
+setup data and code folders on Cyclone <br/>
 `export SINGULARITY_BINDPATH="/onyx/data/p029:/data,/nvme/h/jo21gi1/code:/mnt,/nvme/h/jo21gi1/scratch:/scratch"`
+
+setup data and code folders on local machine <br/>
+`export SINGULARITY_BINDPATH="/home/gianthk/Data/StefanFly_test:/data,/home/gianthk/PycharmProjects/BEATS:/code,/home/gianthk/Data/StefanFly_test/test_00_:/scratch"`
 
 #### Run .py recon script (deprecated; use tomopy-cli instead)
 `singularity exec /nvme/h/jo21gi1/tomopy.sif python /mnt/tomopy_tests/scripts/tomopy_test01_script_noDXchange.py`
