@@ -78,7 +78,7 @@ COR = 486.5
 # options = {'method':'SART', 'num_iter':10*180, 'proj_type':'linear', 'extra_options':{'MinConstraint':0}}
 # options = {'proj_type': 'strip', 'method': 'FBP'}
 options = {'proj_type': 'cuda', 'method': 'FBP_CUDA'}
-recon = tomopy.recon(projs, theta, center=COR, algorithm=tomopy.astra, options=options, ncore=1)
+recon = tomopy.recon(projs, theta, center=COR, algorithm=tomopy.astra, options=options)
 
 # # apply circular mask
 recon = tomopy.circ_mask(recon, axis=0, ratio=0.95)
