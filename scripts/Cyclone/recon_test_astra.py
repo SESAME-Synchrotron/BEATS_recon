@@ -34,7 +34,8 @@ def writemidplanesDxchange(data, filename_out):
 # algorithm = 'astra_sart'
 # algorithm = 'astra_fbp'
 # algorithm = 'astra_fbp'
-algorithm = 'astra_fbp_cuda'
+# algorithm = 'astra_fbp_cuda'
+algorithm = 'astra_sirt_cuda'
 
 # h5file = "/tmp/tomoData/8671_8_B_01_/8671_8_B_01_.h5"
 h5file = "/data/test_00_/test_00_.h5"
@@ -77,7 +78,9 @@ COR = 486.5
 # recon = tomopy.recon(projs, theta, center=COR, algorithm=algorithm, sinogram_order=False)
 # options = {'method':'SART', 'num_iter':10*180, 'proj_type':'linear', 'extra_options':{'MinConstraint':0}}
 # options = {'proj_type': 'strip', 'method': 'FBP'}
-options = {'proj_type': 'cuda', 'method': 'FBP_CUDA'}
+# options = {'proj_type': 'cuda', 'method': 'FBP_CUDA'}
+extra_options = {'MinConstraint': 0}
+options = {'proj_type': 'cuda', 'method': 'SIRT_CUDA', 'num_iter': 100, 'extra_options': extra_options}
 recon = tomopy.recon(projs, theta, center=COR, algorithm=tomopy.astra, options=options)
 
 # # apply circular mask
@@ -94,12 +97,13 @@ recon = tomopy.circ_mask(recon, axis=0, ratio=0.95)
 # dxchange.writer.write_tiff_stack(recon_uint8Range, fname=fileout, dtype='uint8', axis=0, digit=5, start=0, overwrite=True)
 
 # write tiff slice with dxchange
-fileout = path_recon+'slice.tiff'
-# recon = recon.astype('float32')
+fileout = path_recon+'recon.tiff'
 dxchange.writer.write_tiff(recon[int(recon.shape[0] / 2), :, :], fname=path_recon+'sliceXY.tiff')
 dxchange.writer.write_tiff(recon[:, int(recon.shape[1] / 2), :], fname=path_recon+'sliceXZ.tiff')
 dxchange.writer.write_tiff(recon[:, :, int(recon.shape[2] / 2)], fname=path_recon+'sliceYZ.tiff')
 
+recon = recon.astype('float32')
+tifffile.imsave(fileout, recon, bigtiff=True)
 # tifffile.imsave(fileout, recon[int(recon.shape[0] / 2), :, :])
 
 # write midplanes
