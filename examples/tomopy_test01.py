@@ -30,11 +30,11 @@ __maintainer__ = 'Gianluca Iori'
 __email__ = "gianluca.iori@sesame.org.jo"
 
 
-import logging
-import os
-import dxchange
 import tomopy
+import dxchange
 import numpy as np
+import os
+import logging
 import h5py
 import matplotlib
 import matplotlib.pyplot as plt
