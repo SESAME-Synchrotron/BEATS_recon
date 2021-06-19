@@ -1,4 +1,6 @@
-## 19.05.21 - Cyclone log
+## Cyclone recon log
+Last update: 19.06.2021
+______________________________________
 #### ssh to Cyclone
 `ssh -X jo21gi1@cyclone.hpcf.cyi.ac.cy`
 
