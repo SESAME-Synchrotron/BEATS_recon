@@ -3,6 +3,9 @@
 Tests of tomographic reconstruction with [TomoPy](https://tomopy.readthedocs.io/en/latest/) <br />
 A dataset for running these tests can be found [here](https://sesamejo-my.sharepoint.com/:f:/g/personal/gianluca_iori_sesame_org_jo/Ei7H2BsgcgZMqiMqEzER-5oBoUlZCwY84sKT3D5i1hPc_Q?e=GgsAR6)
 
+### 2 DO:
+- [ ] normalize to uint8 using 'numexpr' (see nersc_tomopy)
+
 ---
 ### Milestones:
 #### LEVEL 1 - beginner
@@ -15,20 +18,21 @@ A dataset for running these tests can be found [here](https://sesamejo-my.sharep
 - [x] **phase retrieval** algorithms in TomoPy
 - [x] **tomopy-cli** full recon
 - [x] store and load **config files** for command line recon
-- [ ] phase retrieval with **PyPhase**
-- [ ] **360deg recon** (extended Field Of View)
-- [ ] test different **Ring removal** algorithms
-- [ ] test different **Filters**
+- [x] **360deg recon** (extended Field Of View)
 #### LEVEL 2 - intermediate
 - [ ] **HPC cluster** TomoPy build
 - [ ] **MP reco**
 - [ ] **GPU reco**
+- [ ] phase retrieval with **PyPhase**
+- [ ] test different **Ring removal** algorithms
+- [ ] test different **Filters**
 #### LEVEL 3 - expert
-- [ ] TomoPy reco **GUI**
-- [ ] print **reco report** (Latex)
-- [ ] **batch reco** from .CSV table using pandas (through config files)
+- [ ] TomoPy recon **GUI**
+- [ ] print **recon report** (Latex)
+- [ ] **batch recon** from .CSV table using pandas (through config files)
 ___
-### Notebooks of TomoPy tests:
+
+### Examples:
 - [TomoPy TEST 01](examples/TomoPy_test01.ipynb)
     - Complete TomoPy reconstruction pipeline on (small) TOMCAT sample data
     - Absorption reco
