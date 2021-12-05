@@ -8,56 +8,83 @@ Tomographic reconstruction image processing utilities.
 """
 2DO:
 - 2D bbox
+- fast touint8
 - latex report
 
 """
 
 __author__ = 'Gianluca Iori'
 __date_created__ = '2021-03-28'
-__date__ = '2021-10-24'
+__date__ = '2021-11-09'
 __copyright__ = 'Copyright (c) 2021, JC|MSK'
 __docformat__ = 'restructuredtext en'
-__license__ = "GPL"
-__version__ = "1.0"
+__license__ = "MIT"
+__version__ = "1.1"
 __maintainer__ = 'Gianluca Iori'
 __email__ = "gianthk.iori@gmail.com"
 
 import numpy as np
+import numexpr as ne
 import png
 import os
 import dxchange
 import tifffile
-# import matplotlib
 import matplotlib.pyplot as plt
 
-def touint8(data, quantiles=None):
+def convert8bit(rec, data_min, data_max, numexpr=True):
+    rec = rec.astype(np.float32, copy=False)
+    df = np.float32(data_max-data_min)
+    mn = np.float32(data_min)
+
+    if numexpr:
+        scl = ne.evaluate('0.5+255*(rec-mn)/df', truediv=True)
+        ne.evaluate('where(scl<0,0,scl)', out=scl)
+        ne.evaluate('where(scl>255,255,scl)', out=scl)
+        return scl.astype(np.uint8)
+    else:
+        rec = 0.5+255*(rec-mn)/df
+        rec[rec<0]=0
+        rec[rec>255]=255
+        return np.uint8(rec)
+
+def touint8(data, range=None, quantiles=None, numexpr=True):
     """Normalize and convert data to uint8.
 
         Parameters
         ----------
         data
             Input data.
-        quantiles
-            Control the range for data normlization.
+        range : [float, float]
+            Control range for data normalization.
+        quantiles : [float, float]
+            Define range for data normalization through input data quantiles. If range is given this input is ignored.
+        numexpr : bool
+            Use fast numerical expression evaluator for NumPy (memory expensive).
 
         Returns
         -------
-        output: uint8
+        output : uint8
             Normalized data.
         """
 
-    # if quantiles is empty data is scaled based on its min and max values
-    if quantiles == None:
-        data_min = np.nanmin(data)
-        data_max = np.nanmax(data)
-        data_max = data_max - data_min
-        data = 255 * ((data - data_min) / data_max)
-        return np.uint8(data)
+    if range == None:
+
+        # if quantiles is empty data is scaled based on its min and max values
+        if quantiles == None:
+            data_min = np.nanmin(data)
+            data_max = np.nanmax(data)
+            data_max = data_max - data_min
+            return convert8bit(data, data_min, data_max, numexpr)
+        else:
+            [q0, q1] = np.quantile(np.ravel(data), quantiles)
+            return convert8bit(data, q0, q1, numexpr)
+
     else:
-        [q0, q1] = np.quantile(np.ravel(data), quantiles)
-        q1 = q1 - q0
-        data = 255 * ((data - q0) / q1)
-        return np.uint8(data)
+        # ignore quantiles input if given
+        if quantiles is not None:
+            print('quantiles input ignored.')
+
+        return convert8bit(data, range[0], range[1], numexpr)
 
 def to01(I):
     """Normalize data to 0-1 range.
@@ -69,11 +96,17 @@ def to01(I):
 
     Returns
     -------
-    I: float64
+    I : float32
         Normalized data.
     """
-    I = I-np.min(I)
-    return I/np.max(I)
+
+    I = I.astype(np.float32, copy=False)
+    data_min = np.nanmin(I)
+    data_max = np.nanmax(I)
+    df = np.float32(data_max - data_min)
+    mn = np.float32(data_min)
+    scl = ne.evaluate('(I-mn)/df', truediv=True)
+    return scl.astype(np.float32)
 
 def writemidplanes(data, filename_out):
     # write orthogonal mid-planes through 3D dataset
