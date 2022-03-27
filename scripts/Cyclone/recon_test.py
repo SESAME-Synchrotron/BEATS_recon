@@ -22,7 +22,6 @@ def touint8(data, quantiles=None):
         data = 255 * ((data - q0) / q1)
         return np.uint8(data)
 
-
 def writemidplanesDxchange(data, filename_out):
     if data.ndim == 3:
         filename, ext = os.path.splitext(filename_out)
@@ -30,7 +29,7 @@ def writemidplanesDxchange(data, filename_out):
         dxchange.writer.write_tiff(touint8(data[:, int(data.shape[1] / 2), :]), fname=filename + '_XZ.tiff', dtype='uint8')
         dxchange.writer.write_tiff(touint8(data[:, :, int(data.shape[2] / 2)]), fname=filename + '_YZ.tiff', dtype='uint8')
 
-algorithm = 'sirt'
+algorithm = 'gridrec'
 
 # h5file = "/tmp/tomoData/8671_8_B_01_/8671_8_B_01_.h5"
 h5file = "/data/test_00_/test_00_.h5"
