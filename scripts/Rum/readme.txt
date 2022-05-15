@@ -4,3 +4,7 @@
 3. copy Singularity TomoPy container from https://sesamejo-my.sharepoint.com/:u:/g/personal/gianluca_iori_sesame_org_jo/Efq5fTWjFENLtMHJyn6MOnwBxIbSULzfcI4kwyUIjAnlyw?e=R4beOa
 4. modify SINGULARITY_BINDPATH definitions in run_recon_test.sh accordingly
 5. run bash script run_recon_test.sh
+
+#################### 15.05.2022 ####################
+0. modify paths in run_recon_test.sh
+1.
