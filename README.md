@@ -8,41 +8,24 @@ A dataset for running these tests can be found [here](https://sesamejo-my.sharep
 - [X] (OK) visualization with matplotlib
 - [X] (OK) import recon_utils module; visualization
 - [X] (OK) imagej
-- [X] (fail) ASTRA GPU reconstruction (see error 1 below)
-- [X] (fail) tomopy-cli (see error 2 below)
-- [X] (fail) tomcat 180deg CPU recon (see error 3 below)
-- [ ] (fail) tomcat 180deg GPU recon (see error 1 below)
+- [X] (OK) ASTRA GPU reconstruction (FBP, SIRT)
+- [X] (OK) tomcat 180deg CPU recon (FBP, GRIDREC)
+- [X] (OK) tomcat 180deg GPU recon (FBP, SIRT)
+- [X] (OK) slurm sbatch process
+- [X] (OK) recon on cpunode
+- [X] tomopy-cli
+  - [X] (OK) `gridrec`
+  - [X] (fail) `fpb` - not supported yet
+  - [X] (fail) `sirt` - not supported yet
+  - [X] (fail) `lprec` - `ModuleNotFoundError: No module named 'lprec'`
+  - [X] (fail) `astrasirt` - `File "astra/data2d_c.pyx", line 89, in astra.data2d_c.create
+ValueError: The dimensions of the data do not match those specified in the geometry: (2000, 2560) != (2001, 2560)`
+  
 - [ ] tomcat 360deg recon (check memory usage GPU node)
 - [ ] tomocupy
 - [ ] jupyter
 
 ### Error report:
-1. error launching tomopy cuda reconstruction (with ASTRA): </br>`Error: allocateVolume: CUDA error 35: CUDA driver version is insufficient for CUDA runtime version.`
-2. import error when trying to use tomopy-cli: `tomopy-cli recon -h` </br>
-  `File "/PETRA/cluster_software/install/anaconda/envs/tomopy/bin/tomopy", line 33, in <module>
-    sys.exit(load_entry_point('tomopy-cli==0.3', 'console_scripts', 'tomopy')())
-  File "/PETRA/cluster_software/install/anaconda/envs/tomopy/bin/tomopy", line 25, in importlib_load_entry_point
-    return next(matches).load()
-  File "/PETRA/cluster_software/install/anaconda/envs/tomopy/lib/python3.10/importlib/metadata/__init__.py", line 171, in load
-    module = import_module(match.group('module'))
-  File "/PETRA/cluster_software/install/anaconda/envs/tomopy/lib/python3.10/importlib/__init__.py", line 126, in import_module
-    return _bootstrap._gcd_import(name[level:], package, level)
-  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
-  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
-  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
-  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
-  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
-  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
-  File "/PETRA/cluster_software/install/anaconda/envs/tomopy/bin/tomopycli.py", line 12, in <module>
-    from tomopy_cli import config, __version__
-  File "/PETRA/cluster_software/install/anaconda/envs/tomopy/lib/python3.10/site-packages/tomopy_cli/config.py", line 21, in <module>
-    from tomopy_cli import recon
-  File "/PETRA/cluster_software/install/anaconda/envs/tomopy/lib/python3.10/site-packages/tomopy_cli/recon.py", line 12, in <module>
-    import meta
-ModuleNotFoundError: No module named 'meta'`
-3. less than 100GB memory available cause reconstructions to break: ![img_1.png](img_1.png)
-4. get several time the following warning when using tomopy. The process nevertheless runs successfully: </br> `Error.  nthreads must be a positive integerError.  nthreads cannot be larger than environment variable "NUMEXPR_MAX_THREADS" (64)`
-
 
 ---
 ### Milestones:
