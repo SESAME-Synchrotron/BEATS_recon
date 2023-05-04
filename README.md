@@ -20,7 +20,8 @@ A dataset for running these tests can be found [here](https://sesamejo-my.sharep
   - [X] (fail) `lprec` - `ModuleNotFoundError: No module named 'lprec'`
   - [X] (fail) `astrasirt` - `File "astra/data2d_c.pyx", line 89, in astra.data2d_c.create
 ValueError: The dimensions of the data do not match those specified in the geometry: (2000, 2560) != (2001, 2560)`
-- [X] (fail) tomcat 360deg recon (out-of-memory during flat field correct on cpunode@rum)
+- [X] (fail) tomcat 360deg recon (4001 x 2160 x 2560) (out-of-memory during flat field correct on cpunode@rum)
+  - [X] (OK) complete on BL-BEATS-WS01 (recon shape: 4129 x 4129 x 2160) (tomopy gridrec; ncore=36; 172sec; 303G/503G)
 - [ ] tomocupy
 - [ ] jupyter
 
