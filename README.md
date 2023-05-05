@@ -23,7 +23,17 @@ ValueError: The dimensions of the data do not match those specified in the geome
 - [X] (fail) tomcat 360deg recon (4001 x 2160 x 2560) (out-of-memory during flat field correct on cpunode@rum)
   - [X] (OK) complete on BL-BEATS-WS01 (recon shape: 4129 x 4129 x 2160) (tomopy gridrec; ncore=36; 172sec; 303G/503G)
 - [ ] tomocupy
-- [ ] jupyter
+- [ ] BEATS recon jupyter notebook:
+  - [ ] file select: [ipyfilechooser](https://github.com/crahan/ipyfilechooser); [solara](https://solara.dev/api/file_browser)
+  - [ ] ipywidget COR [IntSlider](https://ipywidgets.readthedocs.io/en/stable/examples/Widget%20List.html#intslider)
+  - [ ] ipywidget recon write range [FloatRangeSlider](https://ipywidgets.readthedocs.io/en/stable/examples/Widget%20List.html#floatrangeslider)
+  - [ ] launch ImageJ
+  - [ ] phase contrast [Checkbox](https://ipywidgets.readthedocs.io/en/stable/examples/Widget%20List.html#checkbox)
+  - [ ] stripe removal [Checkbox](https://ipywidgets.readthedocs.io/en/stable/examples/Widget%20List.html#checkbox)
+  - [ ] _add to master_ button
+  - [ ] recon parameter table input
+  - [ ] (?) visualize master ([examples](https://pbpython.com/dataframe-gui-overview.html))
+  - [ ] sections / narrative
 
 ### Error report:
 
