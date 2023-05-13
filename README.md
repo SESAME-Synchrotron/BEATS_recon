@@ -9,6 +9,7 @@ Datasets for running the tests can be found on the [TomoBank](https://tomobank.r
 - [ ] ipywidget recon write range [FloatRangeSlider](https://ipywidgets.readthedocs.io/en/stable/examples/Widget%20List.html#floatrangeslider)
 - [ ] launch ImageJ
 - [ ] phase contrast [Checkbox](https://ipywidgets.readthedocs.io/en/stable/examples/Widget%20List.html#checkbox)
+  - [ ] get phase retrieval params from exchange
 - [ ] stripe removal [Checkbox](https://ipywidgets.readthedocs.io/en/stable/examples/Widget%20List.html#checkbox)
 - [ ] _add to master_ button
 - [ ] recon parameter table input
