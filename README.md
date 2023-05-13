@@ -1,9 +1,10 @@
-# TomoPy_tests
+# BEATS_recon
 
-Tests of tomographic reconstruction with [TomoPy](https://tomopy.readthedocs.io/en/latest/) <br />
-A dataset for running these tests can be found [here](https://sesamejo-my.sharepoint.com/:f:/g/personal/gianluca_iori_sesame_org_jo/Ei7H2BsgcgZMqiMqEzER-5oBoUlZCwY84sKT3D5i1hPc_Q?e=GgsAR6)
+[TomoPy](https://tomopy.readthedocs.io/en/latest/) reconstruction scripts, notebooks and examples for the [BEATS beamline](https://beats-sesame.eu/) of [SESAME](https://www.sesame.org.jo/). <br />
+Datasets for running the tests can be found on the [TomoBank](https://tomobank.readthedocs.io/en/latest/)
 
-## SESAME RUM tests:
+## Tests:
+### rum@sesame:
 - [X] (OK) kblt spring reconstruction (SED dataset; small)
 - [X] (OK) visualization with matplotlib
 - [X] (OK) import recon_utils module; visualization
@@ -35,10 +36,8 @@ ValueError: The dimensions of the data do not match those specified in the geome
   - [ ] (?) visualize master ([examples](https://pbpython.com/dataframe-gui-overview.html))
   - [ ] sections / narrative
 
-### Error report:
-
 ---
-### Milestones:
+## Milestones:
 #### LEVEL 1 - beginner
 - [x] **absorption** reco
 - [x] **read HDF5**
@@ -64,7 +63,7 @@ ValueError: The dimensions of the data do not match those specified in the geome
 - [ ] **batch recon** from .CSV table using pandas (through config files)
 ___
 
-### Examples:
+## Examples:
 - [TomoPy TEST 01](examples/TomoPy_test01.ipynb)
     - Complete TomoPy reconstruction pipeline on (small) TOMCAT sample data
     - Absorption reco
