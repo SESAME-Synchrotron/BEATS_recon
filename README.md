@@ -6,6 +6,30 @@ Datasets for running the tests can be found on the [TomoBank](https://tomobank.r
 test push
 
 ## BEATS recon notebook
+- [ ] pipeline / narrative
+- [X] load HDF5
+  - [X] load range
+  - [ ] (?) dxchange `read_beats`
+  - [X] read theta_readout
+- [X] flat field correct
+- [X] 360 to 180 degree sinogram
+  - [ ] inspect overlap
+- [X] phase retrieval
+- [ ] stripe removal
+- [X] log transform
+- [X] Center Of Rotation (COR)
+  - [X] auto (Vo, Tomopy, ...)
+  - [X] save COR range; open in Imagej
+- [X] CPU recon
+  - [ ] single slice
+- [ ] post-processing
+  - [X] circ_mask
+  - [ ] ring artefact correction
+  - [ ] 8bit convert
+- [X] write output TIFF stack
+- [X] imagej launcher
+
+### ipywidgets
 - [ ] file select: [ipyfilechooser](https://github.com/crahan/ipyfilechooser); [solara](https://solara.dev/api/file_browser)
 - [ ] ipywidget COR [IntSlider](https://ipywidgets.readthedocs.io/en/stable/examples/Widget%20List.html#intslider)
 - [ ] ipywidget recon write range [FloatRangeSlider](https://ipywidgets.readthedocs.io/en/stable/examples/Widget%20List.html#floatrangeslider)
@@ -16,14 +40,15 @@ test push
 - [ ] _add to master_ button
 - [ ] recon parameter table input
 - [ ] (?) visualize master ([examples](https://pbpython.com/dataframe-gui-overview.html))
-- [ ] sections / narrative
 - [ ] generate slurm `bash` script from master
 
+---
 ## BEATS recon script
 - [ ] argparse
 - [ ] help
 - [ ] phase retrieval
 
+---
 ## Tests:
 ### rum@sesame:
 - [X] (OK) kblt spring reconstruction (SED dataset; small)
