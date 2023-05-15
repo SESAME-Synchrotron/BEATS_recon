@@ -21,11 +21,11 @@ test push
   - [X] auto (Vo, Tomopy, ...)
   - [X] save COR range; open in Imagej
 - [X] CPU recon
-  - [ ] single slice
+  - [X] single slice
 - [ ] post-processing
   - [X] circ_mask
   - [ ] ring artefact correction
-  - [ ] 8bit convert
+  - [X] 8bit convert
 - [X] write output TIFF stack
 - [X] imagej launcher
 
