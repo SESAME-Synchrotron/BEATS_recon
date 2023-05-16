@@ -3,8 +3,6 @@
 [TomoPy](https://tomopy.readthedocs.io/en/latest/) reconstruction scripts, notebooks and examples for the [BEATS beamline](https://beats-sesame.eu/) of [SESAME](https://www.sesame.org.jo/). <br />
 Datasets for running the tests can be found on the [TomoBank](https://tomobank.readthedocs.io/en/latest/)
 
-test push
-
 ## BEATS recon notebook
 - [ ] pipeline / narrative
 - [X] load HDF5
@@ -22,6 +20,7 @@ test push
   - [X] save COR range; open in Imagej
 - [X] CPU recon
   - [X] single slice
+  - [ ] view with `napari`
 - [ ] post-processing
   - [X] circ_mask
   - [ ] ring artefact correction
@@ -47,6 +46,8 @@ test push
 - [ ] argparse
 - [ ] help
 - [ ] phase retrieval
+  - [ ] try read phase retrieval params from hdf5 file
+  - 
 
 ---
 ## Tests:

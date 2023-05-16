@@ -119,10 +119,9 @@ def main():
 		recon_dir = args.recon_dir
 
 	if not os.path.isdir(recon_dir):
-		logging.warning('Reconstruction directory does not extst. Will create it: {}'.format(recon_dir))
+		logging.warning('Reconstruction directory does not exist. Will create it: {}'.format(recon_dir))
 		os.mkdir(recon_dir)
 
-	# start reconstruction #################################################################################################
 	time_start = time()
 	logging.basicConfig(filename=os.path.splitext(args.h5file)[0]+'_recon.log', level=logging.DEBUG)
 
@@ -132,7 +131,7 @@ def main():
 	else:
 		projs, flats, darks, theta = dxchange.read_aps_32id(args.h5file, exchange_rank=0, sino=args.sino)
 
-	# If the angular information is not available from the raw data you need to set the data collection angles.
+	# If the angular information is not available from the raw data, we need to set the data collection angles.
 	# In this case, theta is set as equally spaced between 0-180 degrees.
 	if theta is None:
 		theta = tomopy.angles(projs.shape[0])
@@ -145,14 +144,18 @@ def main():
 
 	if args.phase:
 		# Perform phase retrieval
-		projs = tomopy.retrieve_phase(projs, pixel_size=1e-4 * (4.5 / 1), dist=330, energy=24, alpha=1e-3, pad=True, ncore=ncore, nchunk=None)
+		projs = tomopy.retrieve_phase(projs,
+									  pixel_size=1e-4 * (4.5 / 1),
+									  dist=330,
+									  energy=24,
+									  alpha=1e-3,
+									  pad=True,
+									  ncore=args.ncore,
+									  nchunk=None)
 	else:
 		# Perform - log transform
 		logging.info("- log transform.")
-		projs = tomopy.minus_log(projs, ncore=ncore)
-
-	# downsample
-	# projs = ndimage.zoom(projs, [0.5, 0.5, 1], output=None, order=2)
+		projs = tomopy.minus_log(projs, ncore=args.ncore)
 
 	# auto detect Center Of Rotation (COR)
 	# logging.info("tomopy.find_center..")
