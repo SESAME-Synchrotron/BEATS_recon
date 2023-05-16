@@ -78,14 +78,23 @@ def main():
     parser.add_argument('--work_dir', type=str, default=None, help='Work folder.')
     parser.add_argument('--recon_dir', type=str, default=None, help='Output reconstruction folder.')
     parser.add_argument('--phase', dest='phase', action='store_true', help='Perform single-step phase retrieval from phase-contrast measurements.')
-    parser.add_argument('--alpha', type=float, default=None, help='Phase retrieval regularization parameter.')
+    parser.add_argument('--alpha', type=float, default=0.001, help='Phase retrieval regularization parameter.')
+    parser.add_argument('-ps', '--pixelsize', type=float, default=None, help='Scan pixel size [mm]. Used for phase retrieval.')
+    parser.add_argument('-en', '--energy', type=float, default=None, help='Scan energy [keV]. Used for phase retrieval.')
+    parser.add_argument('-sdd', '--sdd', type=float, default=None, help='Sample Detector Distance [mm]. Used for phase retrieval.')
+    parser.add_argument('--phase_pad', dest='phase_pad', action='store_true', help='If True, extend the size of the projections by padding with zeros.')
     parser.add_argument('--360', dest='fullturn', action='store_true', help='360 degrees scan.')
     parser.add_argument('--overlap', type=int, default=0, help='Overlap parameter for 360 degrees scan.')
     parser.add_argument('--rotside', type=str, default='left', help='Rotation axis side for 360 degrees scan.')
+    parser.add_argument('--cor', type=float, default=None, help='Center Of Rotation.')
+    parser.add_argument('-cm', '--cormethod', type=str, default='Vo', help='Method for automatic finding of the rotation axis location.')
     parser.add_argument('--ncore', type=int, default=36, help='Number of cores that will be assigned to jobs.')
     parser.add_argument('--algorithm', type=str, default='gridrec',
 						help='Reconstruction algorithm. Options are: gridrec, fbp, fbp_astra, fbp_cuda_astra, sirt, sirt_cuda, sirt_cuda_astra, sart_cuda_astra, cgls_cuda_astra, mlem, art.'
 							 'Visit https: // tomopy.readthedocs.io / en / latest / api / tomopy.recon.algorithm.html for more info.')
+    parser.add_argument('--circ_mask', dest='circ_mask', action='store_true', help='If True, apply circular mask to the Z-axis of reconstructed volume.')
+    parser.add_argument('-cmr', '--circ_mask_ratio', type=float, default=1.0, help='Ratio of the mask’s diameter in pixels to the smallest slice size.')
+    parser.add_argument('-cmval', '--circ_mask_val', type=float, default=0.0, help='Value for the masked region.')
 
     parser.add_argument('-vs', '--voxelsize', type=float, default=[1., 1., 1.], nargs='+', help='Voxel size.')
     parser.add_argument('-r', '--resampling', type=float, default=1., help='Resampling factor.')
@@ -111,7 +120,7 @@ def main():
                         help='Reference node input. Used for kinematic coupling of Boundary Conditions in the analysis template file.'
                              'The REF_NODE coordinates [x,y,z] can be given. Alternatively use one of the following args [X0, X1, Y0, Y1, Z0, Z1] to generate a REF_NODE at a model boundary.')
     parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help='Verbose output.')
-    parser.set_defaults(shell_mesh=False, vol_mesh=False, phase=False, fullturn=False, verbose=False)
+    parser.set_defaults(circ_mask=False, phase_pad=False, phase=False, fullturn=False, verbose=False)
 
     args = parser.parse_args()
 
@@ -137,7 +146,7 @@ def main():
 	logging.basicConfig(filename=os.path.splitext(args.h5file)[0]+'_recon.log', level=logging.DEBUG)
 
 	# read projections, darks, flats and angles
-	if not args.sino:
+	if args.sino is None:
 	    projs, flats, darks, theta = dxchange.read_aps_32id(args.h5file, exchange_rank=0)
 	else:
 		projs, flats, darks, theta = dxchange.read_aps_32id(args.h5file, exchange_rank=0, sino=args.sino)
@@ -161,77 +170,67 @@ def main():
 	# Phase retrieval
 	if args.phase:
 		# Try to get phase retrieval parameters from HDF5 file
-		logging.info("Trying to read phase retrieval parameters from HDF5 file...")
-		pixel_size, magnification, dist, energy = read_phase_retrieval_params(args.h5file)
-		logging.info("HDF5 parameters detected.")
-		logging.info("    - Pixel size: {0} micron".format(pixel_size))
+		logging.info("Attempting to read phase retrieval parameters from HDF5 file...")
+		det_pixel_size, magnification, dist, energy = read_phase_retrieval_params(args.h5file)
+		if args.pixelsize is not None:
+			pixel_size = args.pixelsize
+		else:
+			pixel_size = det_pixel_size / magnification
+
+		if args.energy is not None:
+			energy = args.energy
+
+		if args.sdd is not None:
+			dist = args.sdd
+
+		logging.info("retrieving phase with parameters:")
+		logging.info("    - Detector pixel size: {0} micron".format(det_pixel_size*1e4))
+		logging.info("    - Object pixel size: {0} micron".format(pixel_size * 1e4))
 		logging.info("    - Magnification: {0}X".format(magnification))
 		logging.info("    - Sample Detector Distance: {0} mm".format(dist))
 		logging.info("    - Energy: {0} KeV".format(energy))
-																									  args.overlap))
 
 		projs = tomopy.retrieve_phase(projs,
-									  pixel_size=1e-4 * (4.5 / 1),
-									  dist=330,
-									  energy=24,
-									  alpha=1e-3,
-									  pad=True,
+									  pixel_size=pixel_size,
+									  dist=dist,
+									  energy=energy,
+									  alpha=args.alpha,
+									  pad=args.phase_pad,
 									  ncore=args.ncore,
 									  nchunk=None)
 	else:
 		# Perform - log transform
-		logging.info("- log transform.")
+		logging.info("Applying - log transform.")
 		projs = tomopy.minus_log(projs, ncore=args.ncore)
 
-	# auto detect Center Of Rotation (COR)
-	# logging.info("tomopy.find_center..")
-	# COR = tomopy.find_center(projs, theta, init=projs.shape[2]/2, tol=1)
-
-	# auto detect Center Of Rotation (COR) witn Vo method
-	logging.info("tomopy.find_center_vo..")
-	COR = tomopy.find_center_vo(projs)
-	logging.info("COR: " + str(COR))
-
-	# COR was found with Vo method + manual inspection
-	# logging.info("COR given by user: " + str(COR))
-
-	logging.info("Reconstruct with algorithm: " + algorithm)
-	recon_start_time = time()
-	if algorithm == 'fbp_astra':
-		# CPU ASTRA RECON
-		options = {'proj_type': 'linear', 'method': 'FBP'}
-		recon = tomopy.recon(projs, theta, center=COR, algorithm=tomopy.astra, options=options, ncore=ncore)
-	elif algorithm == 'fbp_cuda_astra':
-		# GPU ASTRA RECON (CUDA)
-		options = {'proj_type': 'cuda', 'method': 'FBP_CUDA'}
-		recon = tomopy.recon(projs, theta, center=COR, algorithm=tomopy.astra, options=options, ncore=10)
-	elif algorithm == 'sirt_cuda':
-		recon = tomopy.recon(projs, theta, center=COR, algorithm='sirt', sinogram_order=False, accelerated=True, ncore=1)
-	elif algorithm == 'sirt_cuda_astra':
-		# GPU ASTRA RECON (CUDA)
-		extra_options = {'MinConstraint': 0}
-		# options = {'proj_type': 'cuda', 'method': 'SIRT_CUDA', 'num_iter': 200, 'extra_options': extra_options}
-		options = {'proj_type': 'cuda', 'method': 'SIRT_CUDA', 'num_iter': 100}
-		recon = tomopy.recon(projs, theta, center=COR, algorithm=tomopy.astra, options=options, ncore=10)
-	elif algorithm == 'sart_cuda_astra':
-		options = {'proj_type': 'cuda', 'method': 'SART_CUDA', 'num_iter': 100}
-		recon = tomopy.recon(projs, theta, center=COR, algorithm=tomopy.astra, options=options, ncore=10)
-	elif algorithm == 'cgls_cuda_astra':
-		options = {'proj_type': 'cuda', 'method': 'CGLS_CUDA', 'num_iter': 100}
-		recon = tomopy.recon(projs, theta, center=COR, algorithm=tomopy.astra, options=options, ncore=10)
+    # Center Of Rotation
+	if args.cor is None:
+		# auto detect Center Of Rotation (COR)
+		if args.cormethod == 'Vo':
+		    # auto detect Center Of Rotation (COR) witn Vo method
+			logging.info("tomopy.find_center_vo..")
+			COR = tomopy.find_center_vo(projs)
+		else:
+			logging.info("tomopy.find_center..")
+			COR = tomopy.find_center(projs, theta, init=projs.shape[2]/2, tol=1)
 	else:
-		# Launch tomopy recon (no ASTRA)
-		recon = tomopy.recon(projs, theta, center=COR, algorithm=algorithm, sinogram_order=False, ncore=ncore)
+		logging.info("Center Of Rotation given by user.")
+	logging.info("COR: {}".format(COR))
 
+	# TomoPy gridrec reconstruction
+	logging.info("Start reconstruction with algorithm: " + args.algorithm)
+	recon_start_time = time()
+	recon = tomopy.recon(projs, theta, center=COR, algorithm=args.algorithm, sinogram_order=False, ncore=args.ncore)
 	recon_end_time = time()
 	recon_time = recon_end_time - recon_start_time
-	logging.info("Recon time: {} s".format(str(recon_time)))
+	logging.info("Reconstruction time: {} s".format(str(recon_time)))
 
-	# write outputs ################################################################################################
+	if args.circ_mask:
+	    # apply circular mask
+	    recon = tomopy.circ_mask(recon, axis=0, ratio=args.circ_mask_ratio, val=args.circ_mask_val)
+
+	# Write outputs
 	logging.info("Writing outputs..")
-
-	# apply circular mask
-	# recon = tomopy.circ_mask(recon, axis=0, ratio=0.95)
 
 	# write output stack of TIFFs as float
 	fileout = path_recon+'slice.tiff'
