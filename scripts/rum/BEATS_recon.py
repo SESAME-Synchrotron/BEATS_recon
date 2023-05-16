@@ -33,6 +33,14 @@ import recon_utils as ru
 
 #################################################################################
 
+def read_phase_retrieval_params(h5file):
+	pixel_size = dxchange.read_hdf5(h5file, '/measurement/instrument/detector/pixel_size')
+	magnification = dxchange.read_hdf5(h5file, '/measurement/instrument/detection_system/objective/resolution')
+	dist = dxchange.read_hdf5(h5file, '/measurement/instrument/camera_motor_stack/setup/camera_z')
+	energy = dxchange.read_hdf5(h5file, '/measurement/instrument/monochromator/energy')
+
+	return pixel_size, magnification, dist, energy
+
 def main():
     description = textwrap.dedent('''\
                 TomoPy reconstruction script for the BEATS beamline of SESAME.
@@ -71,6 +79,9 @@ def main():
     parser.add_argument('--recon_dir', type=str, default=None, help='Output reconstruction folder.')
     parser.add_argument('--phase', dest='phase', action='store_true', help='Perform single-step phase retrieval from phase-contrast measurements.')
     parser.add_argument('--alpha', type=float, default=None, help='Phase retrieval regularization parameter.')
+    parser.add_argument('--360', dest='fullturn', action='store_true', help='360 degrees scan.')
+    parser.add_argument('--overlap', type=int, default=0, help='Overlap parameter for 360 degrees scan.')
+    parser.add_argument('--rotside', type=str, default='left', help='Rotation axis side for 360 degrees scan.')
     parser.add_argument('--ncore', type=int, default=36, help='Number of cores that will be assigned to jobs.')
     parser.add_argument('--algorithm', type=str, default='gridrec',
 						help='Reconstruction algorithm. Options are: gridrec, fbp, fbp_astra, fbp_cuda_astra, sirt, sirt_cuda, sirt_cuda_astra, sart_cuda_astra, cgls_cuda_astra, mlem, art.'
@@ -100,7 +111,7 @@ def main():
                         help='Reference node input. Used for kinematic coupling of Boundary Conditions in the analysis template file.'
                              'The REF_NODE coordinates [x,y,z] can be given. Alternatively use one of the following args [X0, X1, Y0, Y1, Z0, Z1] to generate a REF_NODE at a model boundary.')
     parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help='Verbose output.')
-    parser.set_defaults(shell_mesh=False, vol_mesh=False, phase=False, tetrafe=False, verbose=False)
+    parser.set_defaults(shell_mesh=False, vol_mesh=False, phase=False, fullturn=False, verbose=False)
 
     args = parser.parse_args()
 
@@ -142,8 +153,23 @@ def main():
 	logging.info("Flat-field correct.")
 	projs = tomopy.normalize(projs, flats, darks, ncore=args.ncore)
 
+    # Convert from 360 to 180 degree sinograms
+	if args.fullturn:
+		logging.info("Convert 360 to 180 degrees sinograms. Rotation axis: {0}; Overlap: {1}.".format(args.rotside, args.overlap))
+		projs = tomopy.sino_360_to_180(projs, args.overlap, args.rotside)
+
+	# Phase retrieval
 	if args.phase:
-		# Perform phase retrieval
+		# Try to get phase retrieval parameters from HDF5 file
+		logging.info("Trying to read phase retrieval parameters from HDF5 file...")
+		pixel_size, magnification, dist, energy = read_phase_retrieval_params(args.h5file)
+		logging.info("HDF5 parameters detected.")
+		logging.info("    - Pixel size: {0} micron".format(pixel_size))
+		logging.info("    - Magnification: {0}X".format(magnification))
+		logging.info("    - Sample Detector Distance: {0} mm".format(dist))
+		logging.info("    - Energy: {0} KeV".format(energy))
+																									  args.overlap))
+
 		projs = tomopy.retrieve_phase(projs,
 									  pixel_size=1e-4 * (4.5 / 1),
 									  dist=330,

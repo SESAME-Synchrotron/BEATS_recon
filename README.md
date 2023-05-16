@@ -45,9 +45,15 @@ Datasets for running the tests can be found on the [TomoBank](https://tomobank.r
 ## BEATS recon script
 - [ ] argparse
 - [ ] help
+- [ ] auto COR
+- [ ] flat field correct
+- [ ] 360 to 180 degree sinogram
 - [ ] phase retrieval
   - [ ] try read phase retrieval params from hdf5 file
-  - 
+- [ ] circ_mask
+- [ ] ring artefact correction
+- [ ] 8bit convert
+- [ ] write output TIFF stack
 
 ---
 ## Tests:
