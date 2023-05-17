@@ -43,17 +43,34 @@ Datasets for running the tests can be found on the [TomoBank](https://tomobank.r
 
 ---
 ## BEATS recon script
-- [ ] argparse
-- [ ] help
-- [ ] auto COR
-- [ ] flat field correct
-- [ ] 360 to 180 degree sinogram
-- [ ] phase retrieval
-  - [ ] try read phase retrieval params from hdf5 file
-- [ ] circ_mask
+- [X] argparse
+- [X] help
+- [X] flat field correct
+- [X] auto COR
+- [X] read phase retrieval params from hdf5 file
 - [ ] ring artefact correction
-- [ ] 8bit convert
-- [ ] write output TIFF stack
+- [X] 8bit convert
+- [X] 16bit convert
+- [ ] 360 to 180 degree sinogram
+- [X] write output TIFF stack
+- [ ] single slice
+- inputs:
+  - [X] `--recon_dir`
+  - [X] `--sino`
+  - [X] `--cor`
+  - [ ] `--cormethod`
+  - [ ] `--360`
+  - [X] `--phase`
+  - [X] `--alpha`
+  - [X] `--circ_mask`
+  - [X] `--recon_dtype`
+  - [X] `--data_range`
+  - [X] `--data_quantiles`
+  - [X] `--ncore`
+  - [X] `--circ_mask_ratio`
+  - [X] `--circ_mask_val`
+  - [X] `--midplanes`
+  - [ ] `--algorithm`
 
 ---
 ## Tests:
