@@ -205,12 +205,12 @@ def main():
 		# apply circular mask
 		recon = tomopy.circ_mask(recon, axis=0, ratio=args.circ_mask_ratio, val=args.circ_mask_val)
 
-	if args.dtype == 'uint8':
+	if args.recon_dtype == 'uint8':
 		logging.info("Rescale dataset to uint8.")
 		recon = ru.touint8(recon, args.data_range, args.data_quantiles)
 
 	logging.info('Writing reconstructed dataset.')
-	dxchange.writer.write_tiff_stack(recon, fname=recon_dir + '/slice.tiff', dtype=args.dtype, axis=0, digit=4, start=0, overwrite=True)
+	dxchange.writer.write_tiff_stack(recon, fname=recon_dir + '/slice.tiff', dtype=args.recon_dtype, axis=0, digit=4, start=0, overwrite=True)
 
 	if args.write_midplanes:
 		ru.writemidplanesDxchange(recon, recon_dir + '/slice.tiff')

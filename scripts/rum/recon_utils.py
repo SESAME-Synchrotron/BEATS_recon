@@ -129,7 +129,7 @@ def writemidplanesDxchange(data, filename_out):
         filename, ext = os.path.splitext(filename_out)
         dxchange.writer.write_tiff(touint8(data[int(data.shape[0] / 2), :, :]), fname=filename+'_XY.tiff', dtype='uint8')
         dxchange.writer.write_tiff(touint8(data[:, int(data.shape[1] / 2), :]), fname=filename + '_XZ.tiff', dtype='uint8')
-        dxchange.writer.write_tiff(touint8(data[:, :, int(data.shape[2] / 2)]), fname=filename + '_YZ.tiff', dype='uint8')
+        dxchange.writer.write_tiff(touint8(data[:, :, int(data.shape[2] / 2)]), fname=filename + '_YZ.tiff', dtype='uint8')
 
 def plot_midplanes(data_3D, slice_x=-1, slice_y=-1, slice_z=-1):
     # Plot midplanes of 3D data
