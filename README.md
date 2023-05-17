@@ -43,6 +43,7 @@ Datasets for running the tests can be found on the [TomoBank](https://tomobank.r
 
 ---
 ## BEATS recon script
+- [ ] documentation
 - [X] argparse
 - [X] help
 - [X] flat field correct
