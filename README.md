@@ -5,6 +5,7 @@ Datasets for running the tests can be found on the [TomoBank](https://tomobank.r
 
 ## BEATS recon notebook
 - [ ] pipeline / narrative
+- [ ] [mybinder](https://mybinder.org/)
 - [X] load HDF5
   - [X] load range
   - [ ] (?) dxchange `read_beats`

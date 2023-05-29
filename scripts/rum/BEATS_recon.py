@@ -66,11 +66,11 @@ def main():
 	parser.add_argument('--phase', dest='phase', action='store_true',
 						help='Perform single-step phase retrieval from phase-contrast measurements.')
 	parser.add_argument('--alpha', type=float, default=0.001, help='Phase retrieval regularization parameter.')
-	parser.add_argument('-ps', '--pixelsize', type=float, default=None,
+	parser.add_argument('--pixelsize', type=float, default=None,
 						help='Scan pixel size [mm]. Used for phase retrieval.')
-	parser.add_argument('-en', '--energy', type=float, default=None,
+	parser.add_argument('--energy', type=float, default=None,
 						help='Scan energy [keV]. Used for phase retrieval.')
-	parser.add_argument('-sdd', '--sdd', type=float, default=None,
+	parser.add_argument('--sdd', type=float, default=None,
 						help='Sample Detector Distance [mm]. Used for phase retrieval.')
 	parser.add_argument('--phase_pad', dest='phase_pad', action='store_true',
 						help='If True, extend the size of the projections by padding with zeros.')
@@ -78,7 +78,7 @@ def main():
 	parser.add_argument('--overlap', type=int, default=0, help='Overlap parameter for 360 degrees scan.')
 	parser.add_argument('--rotside', type=str, default='left', help='Rotation axis side for 360 degrees scan.')
 	parser.add_argument('--cor', type=float, default=None, help='Center Of Rotation.')
-	parser.add_argument('-cm', '--cormethod', type=str, default='Vo',
+	parser.add_argument('--cor_method', type=str, default='Vo',
 						help='Method for automatic finding of the rotation axis location.')
 	parser.add_argument('--ncore', type=int, default=36, help='Number of cores that will be assigned to jobs.')
 	parser.add_argument('--algorithm', type=str, default='gridrec',
@@ -86,30 +86,21 @@ def main():
 							' Visit https://tomopy.readthedocs.io/en/latest/api/tomopy.recon.algorithm.html for more info.')
 	parser.add_argument('--circ_mask', dest='circ_mask', action='store_true',
 						help='If True, apply circular mask to the Z-axis of reconstructed volume.')
-	parser.add_argument('-cmr', '--circ_mask_ratio', type=float, default=1.0,
+	parser.add_argument('--circ_mask_ratio', type=float, default=1.0,
 						help='Ratio of the mask’s diameter in pixels to the smallest slice size.')
-	parser.add_argument('-cmval', '--circ_mask_val', type=float, default=0.0, help='Value for the masked region.')
+	parser.add_argument('--circ_mask_val', type=float, default=0.0, help='Value for the masked region.')
 	parser.add_argument('--midplanes', dest='write_midplanes', action='store_true',
 						help='Write midplane images through the reconstructed volume.')
-	parser.add_argument('-dtype', '--recon_dtype', type=str, default='float32',
+	parser.add_argument('--dtype', type=str, default='float32',
 						help='Data type for output reconstructed TIFF slices.')
-	parser.add_argument('-dr', '--data_range', type=float, default=None, nargs='+',
+	parser.add_argument('--data_range', type=float, default=None, nargs='+',
 						help='Range [min, max] for integer conversion. Used if an integer dtype is specified.')
-	parser.add_argument('-dq', '--data_quantiles', type=float, default=None, nargs='+',
+	parser.add_argument('--data_quantiles', type=float, default=None, nargs='+',
 						help='Quantiles [min, max] for integer conversion. Used if an integer dtype is specified.')
 	parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help='Verbose output.')
 	parser.set_defaults(fullturn=False, phase=False, phase_pad=False, circ_mask=False, write_midplanes=False, verbose=False)
 
 	args = parser.parse_args()
-
-	time_start = time()
-	logging.basicConfig(filename=os.path.splitext(args.h5file)[0] + '_recon.log', level=logging.DEBUG)
-	now = datetime.now()
-	dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-	logging.info('\n')
-	logging.info("==================================================================================================================")
-	logging.info("BEATS reconstruction - {}.".format(dt_string))
-	logging.info("==================================================================================================================\n\n")
 
 	if args.verbose:
 		logging.basicConfig(level=logging.INFO)
@@ -118,6 +109,15 @@ def main():
 		work_dir = os.path.dirname(args.h5file)
 	else:
 		work_dir = args.work_dir
+
+	time_start = time()
+	logging.basicConfig(filename=work_dir + '/' + os.path.splitext(os.path.basename(args.h5file))[0] + '_recon.log', level=logging.DEBUG)
+	now = datetime.now()
+	dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+	logging.info('\n')
+	logging.info("==================================================================================================================")
+	logging.info("BEATS reconstruction - {}.".format(dt_string))
+	logging.info("==================================================================================================================\n\n")
 
 	# output reconstruction directory
 	if args.recon_dir is None:
@@ -194,7 +194,7 @@ def main():
 	else:
 		if args.cor is None:
 			logging.info("Automatic find of Center Of Rotation (COR):")
-			if args.cormethod == 'Vo':
+			if args.cor_method == 'Vo':
 				# auto detect Center Of Rotation (COR) witn Vo method
 				logging.info("tomopy.find_center_vo..\n")
 				COR = tomopy.find_center_vo(projs)
@@ -218,13 +218,13 @@ def main():
 		# apply circular mask
 		recon = tomopy.circ_mask(recon, axis=0, ratio=args.circ_mask_ratio, val=args.circ_mask_val)
 
-	if 'uint' in args.recon_dtype:
-		logging.info("Rescale dataset to {}.\n".format(args.recon_dtype))
-		recon = ru.touint(recon, args.recon_dtype, args.data_range, args.data_quantiles)
+	if 'uint' in args.dtype:
+		logging.info("Rescale dataset to {}.\n".format(args.dtype))
+		recon = ru.touint(recon, args.dtype, args.data_range, args.data_quantiles)
 
 	logging.info('Writing reconstructed dataset.\n')
 	logging.info('converted dtype: {}.\n'.format(str(recon.dtype)))
-	dxchange.writer.write_tiff_stack(recon, fname=recon_dir + '/slice.tiff', dtype=args.recon_dtype, axis=0, digit=4, start=0, overwrite=True)
+	dxchange.writer.write_tiff_stack(recon, fname=recon_dir + '/slice.tiff', dtype=args.dtype, axis=0, digit=4, start=0, overwrite=True)
 
 	if args.write_midplanes:
 		ru.writemidplanesDxchange(recon, work_dir + '/slice.tiff')

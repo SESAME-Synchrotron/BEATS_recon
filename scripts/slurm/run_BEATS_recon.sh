@@ -14,4 +14,4 @@ ml load anaconda/tomopy
 # Variables section: 
 export NUMEXPR_MAX_THREADS=96
 
-python BEATS_recon.py
+python BEATS_recon.py /mnt/PETRA/SED/BEATS/IH/dead_sea_coral_PCO-20230519T164542/dead_sea_coral_PCO-20230519T164542.h5 --recon_dir ~/Data/tmp/recon --work_dir ~/Data/tmp --cor 1204
