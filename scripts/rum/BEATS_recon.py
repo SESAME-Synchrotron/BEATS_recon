@@ -206,10 +206,25 @@ def main():
 			COR = args.cor
 	logging.info("COR: {}\n".format(COR))
 
-	# TomoPy gridrec reconstruction
+	# Reconstruction
 	logging.info("Start reconstruction with algorithm: " + args.algorithm)
 	recon_start_time = time()
-	recon = tomopy.recon(projs, theta, center=COR, algorithm=args.algorithm, sinogram_order=False, ncore=args.ncore)
+	if 'cuda_astra' in args.algorithm:
+		if 'fbp' in args.algorithm:
+			options = {'proj_type': 'cuda', 'method': 'FBP_CUDA'}
+		elif 'sirt' in args.algorithm:
+			options = {'proj_type': 'cuda', 'method': 'SIRT_CUDA'}
+		elif 'sart' in args.algorithm:
+			options = {'proj_type': 'cuda', 'method': 'SART_CUDA'}
+		elif 'cgls' in args.algorithm:
+			options = {'proj_type': 'cuda', 'method': 'CGLS_CUDA'}
+		else:
+			logging.warning("Algorithm option not recognized. Will reconstruct with ASTRA FBP CUDA.")
+			options = {'proj_type': 'cuda', 'method': 'FBP_CUDA'}
+		recon = tomopy.recon(projs, theta, center=COR, algorithm=tomopy.astra, options=options, ncore=1)
+	else:
+		recon = tomopy.recon(projs, theta, center=COR, algorithm=args.algorithm, sinogram_order=False, ncore=args.ncore)
+
 	recon_end_time = time()
 	recon_time = recon_end_time - recon_start_time
 	logging.info("Reconstruction time: {} s\n".format(str(recon_time)))
