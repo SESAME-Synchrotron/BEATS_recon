@@ -9,7 +9,7 @@ For more information, call this script with the help option:
 
 __author__ = ['Gianluca Iori']
 __date_created__ = '2023-05-15'
-__date__ = '2023-05-15'
+__date__ = '2023-06-12'
 __copyright__ = 'Copyright (c) 2023, SESAME BEATS'
 __docformat__ = 'restructuredtext en'
 __license__ = "MIT"
@@ -168,8 +168,8 @@ def main():
 			dist = args.sdd
 
 		logging.info("Retrieving phase with parameters:")
-		logging.info("	- Detector pixel size: {0} micron".format(det_pixel_size * 1e4))
-		logging.info("	- Object pixel size: {0} micron".format(pixel_size * 1e4))
+		logging.info("	- Detector pixel size: {0} micron".format(det_pixel_size * 1e3))
+		logging.info("	- Object pixel size: {0} micron".format(pixel_size * 1e3))
 		logging.info("	- Magnification: {0}X".format(magnification))
 		logging.info("	- Sample Detector Distance: {0} mm".format(dist))
 		logging.info("	- Energy: {0} KeV".format(energy))
@@ -178,7 +178,7 @@ def main():
 		logging.info("	- Number of cores: {0}\n".format(args.ncore))
 
 		phase_start_time = time()
-		projs = tomopy.retrieve_phase(projs, pixel_size=pixel_size, dist=dist, energy=energy, alpha=args.alpha, pad=args.phase_pad, ncore=args.ncore, nchunk=None)
+		projs = tomopy.retrieve_phase(projs, pixel_size=0.1*pixel_size, dist=0.1*dist, energy=energy, alpha=args.alpha, pad=args.phase_pad, ncore=args.ncore, nchunk=None)
 		phase_end_time = time()
 		phase_time = phase_end_time - phase_start_time
 		logging.info("Phase retrieval time: {} s\n".format(str(phase_time)))
