@@ -9,7 +9,7 @@ For more information, call this script with the help option:
 
 __author__ = ['Gianluca Iori']
 __date_created__ = '2023-05-15'
-__date__ = '2023-06-12'
+__date__ = '2023-07-23'
 __copyright__ = 'Copyright (c) 2023, SESAME BEATS'
 __docformat__ = 'restructuredtext en'
 __license__ = "MIT"
@@ -30,9 +30,9 @@ from datetime import datetime
 #################################################################################
 
 def read_phase_retrieval_params(h5file):
-	pixel_size = dxchange.read_hdf5(h5file, '/measurement/instrument/detector/pixel_size')[0]
-	magnification = dxchange.read_hdf5(h5file, '/measurement/instrument/detection_system/objective/resolution')[0]
-	dist = dxchange.read_hdf5(h5file, '/measurement/instrument/camera_motor_stack/setup/camera_z')[0]
+	pixel_size = dxchange.read_hdf5(h5file, '/measurement/instrument/camera/pixel_size')[0]
+	magnification = dxchange.read_hdf5(h5file, '/measurement/instrument/detection_system/objective/magnification')[0]
+	dist = dxchange.read_hdf5(h5file, '/measurement/instrument/detector_motor_stack/detector_z')[0]
 	energy = dxchange.read_hdf5(h5file, '/measurement/instrument/monochromator/energy')[0]
 
 	return pixel_size, magnification, dist, energy
