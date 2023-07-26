@@ -60,6 +60,7 @@ def main():
 	parser = argparse.ArgumentParser(description=description, epilog=epilog,
 									formatter_class=argparse.RawDescriptionHelpFormatter)
 	parser.add_argument('h5file', type=str, help='<Required> Input HDF5 filename (projection data).')
+	parser.add_argument('-p', '--proj', type=int, default=None, nargs='+', help='Specify projections to read. (start, end, step)')
 	parser.add_argument('-s', '--sino', type=int, default=None, nargs='+', help='Specify sinograms to read. (start, end, step)')
 	parser.add_argument('--work_dir', type=str, default=None, help='Work folder.')
 	parser.add_argument('--recon_dir', type=str, default=None, help='Output reconstruction folder.')
@@ -130,10 +131,11 @@ def main():
 		os.mkdir(recon_dir)
 
 	# read projections, darks, flats and angles
-	if args.sino is None:
-		projs, flats, darks, theta = dxchange.read_aps_32id(args.h5file, exchange_rank=0)
-	else:
-		projs, flats, darks, theta = dxchange.read_aps_32id(args.h5file, exchange_rank=0, sino=args.sino)
+	projs, flats, darks, theta = dxchange.read_aps_32id(args.h5file, exchange_rank=0, proj=args.proj, sino=args.sino)
+	# if args.sino is None:
+	# 	projs, flats, darks, theta = dxchange.read_aps_32id(args.h5file, exchange_rank=0)
+	# else:
+	# 	projs, flats, darks, theta = dxchange.read_aps_32id(args.h5file, exchange_rank=0, sino=args.sino)
 
 	# If the angular information is not available from the raw data, we need to set the data collection angles.
 	# In this case, theta is set as equally spaced between 0-180 degrees.
