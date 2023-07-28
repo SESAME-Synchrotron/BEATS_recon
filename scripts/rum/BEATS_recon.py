@@ -98,6 +98,10 @@ def main():
 						help='Range [min, max] for integer conversion. Used if an integer dtype is specified.')
 	parser.add_argument('--data_quantiles', type=float, default=None, nargs='+',
 						help='Quantiles [min, max] for integer conversion. Used if an integer dtype is specified.')
+	parser.add_argument('--flip', type=int, default=None, nargs='+',
+	                    help='Flip reconstruction volume along given axis. --flip 1 2 rotates the reconstruction by 180 degrees around Z-axis.')
+	parser.add_argument('--crop', type=int, default=None, nargs='+',
+	                    help='Crop reconstruction volume with parameters: [X_start, X_size, Y_start, Y_size, Z_start, Z_size]. If argument is negative the corresponding axis is not cropped.')
 	parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help='Verbose output.')
 	parser.set_defaults(fullturn=False, phase=False, phase_pad=False, circ_mask=False, write_midplanes=False, verbose=False)
 
@@ -131,11 +135,8 @@ def main():
 		os.mkdir(recon_dir)
 
 	# read projections, darks, flats and angles
-	projs, flats, darks, theta = dxchange.read_aps_32id(args.h5file, exchange_rank=0, proj=args.proj, sino=args.sino)
-	# if args.sino is None:
-	# 	projs, flats, darks, theta = dxchange.read_aps_32id(args.h5file, exchange_rank=0)
-	# else:
-	# 	projs, flats, darks, theta = dxchange.read_aps_32id(args.h5file, exchange_rank=0, sino=args.sino)
+	projs, flats, darks, _ = dxchange.read_aps_32id(args.h5file, exchange_rank=0, proj=args.proj, sino=args.sino)
+	theta = np.radians(dxchange.read_hdf5(args.h5file, 'exchange/theta', slc=(args.proj,)))
 
 	# If the angular information is not available from the raw data, we need to set the data collection angles.
 	# In this case, theta is set as equally spaced between 0-180 degrees.
@@ -230,6 +231,8 @@ def main():
 	recon_end_time = time()
 	recon_time = recon_end_time - recon_start_time
 	logging.info("Reconstruction time: {} s\n".format(str(recon_time)))
+	recon_shape = recon.shape
+	logging.info("Reconstructed volume size: {2} x {1} x {0} [X x Y x Z]".format(recon_shape[0], recon_shape[1], recon_shape[2]))
 
 	if args.circ_mask:
 		# apply circular mask
@@ -237,7 +240,58 @@ def main():
 
 	if 'uint' in args.dtype:
 		logging.info("Rescale dataset to {}.\n".format(args.dtype))
+		if args.data_range:
+			logging.info("Data range for rescale given by user: {}.\n".format(args.data_range))
 		recon = ru.touint(recon, args.dtype, args.data_range, args.data_quantiles)
+
+	if args.flip:
+		logging.info("Flip reconstruction around axis: {}.\n".format(args.flip))
+		recon = np.flip(recon, args.flip)
+
+	if args.crop:
+		X_end = recon_shape[2]
+		Y_end = recon_shape[1]
+		Z_end = recon_shape[0]
+
+		X_start = args.crop[0]
+		if args.crop[1] > 0:
+			X_size = args.crop[1]
+			X_end = X_start + X_size
+
+		Y_start = args.crop[2]
+		if args.crop[3] > 0:
+			Y_size = args.crop[3]
+			Y_end = Y_start + Y_size
+
+		Z_start = args.crop[4]
+		if args.crop[5] > 0:
+			Z_size = args.crop[5]
+			Z_end = Z_start + Z_size
+
+		# check crop parameters
+		if X_start < 0:
+			X_start = 0
+
+		if Y_start < 0:
+			Y_start = 0
+
+		if Z_start < 0:
+			Z_start = 0
+
+		if X_end > recon_shape[2]:
+			X_end = recon_shape[2]
+
+		if Y_end > recon_shape[1]:
+			Y_end = recon_shape[1]
+
+		if Z_end > recon_shape[0]:
+			Z_end = recon_shape[0]
+
+		logging.info("Crop reconstruction with parameters:")
+		logging.info("	X_start: {0};   X_size: {1}".format(X_start, X_end-X_start))
+		logging.info("	Y_start: {0};   Y_size: {1}".format(Y_start, Y_end-Y_start))
+		logging.info("	Z_start: {0};   Z_size: {1}\n".format(Z_start, Z_end-Z_start))
+		recon = recon[Z_start:Z_end, Y_start:Y_end, X_start:X_end]
 
 	logging.info('Writing reconstructed dataset.\n')
 	logging.info('converted dtype: {}.\n'.format(str(recon.dtype)))
