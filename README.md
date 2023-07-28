@@ -21,7 +21,7 @@ Datasets for running the tests can be found on the [TomoBank](https://tomobank.r
   - [X] save COR range; open in Imagej
 - [X] CPU recon
   - [X] single slice
-  - [ ] view with `napari`
+  - [X] view with `napari`
 - [ ] post-processing
   - [X] circ_mask
   - [ ] ring artefact correction
@@ -53,15 +53,15 @@ Datasets for running the tests can be found on the [TomoBank](https://tomobank.r
 - [ ] ring artefact correction
 - [X] 8bit convert
 - [X] 16bit convert
-- [ ] 360 to 180 degree sinogram
+- [X] 360 to 180 degree sinogram
 - [X] write output TIFF stack
-- [ ] single slice
 - inputs:
   - [X] `--recon_dir`
   - [X] `--sino`
+  - [X] `--proj`
   - [X] `--cor`
-  - [ ] `--cormethod`
-  - [ ] `--360`
+  - [x] `--cormethod`
+  - [X] `--360`
   - [X] `--phase`
   - [X] `--alpha`
   - [X] `--circ_mask`
@@ -72,7 +72,7 @@ Datasets for running the tests can be found on the [TomoBank](https://tomobank.r
   - [X] `--circ_mask_ratio`
   - [X] `--circ_mask_val`
   - [X] `--midplanes`
-  - [ ] `--algorithm`
+  - [X] `--algorithm`
 
 ---
 ## Tests:
