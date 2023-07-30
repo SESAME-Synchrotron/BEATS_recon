@@ -73,10 +73,11 @@ def main():
 						help='Scan energy [keV]. Used for phase retrieval.')
 	parser.add_argument('--sdd', type=float, default=None,
 						help='Sample Detector Distance [mm]. Used for phase retrieval.')
-	# parser.add_argument('--phase_pad', dest='phase_pad', action='store_true',
-	# 					help='If True, extend the size of the projections by padding with zeros.')
-	parser.add_argument('--phase_pad', type=bool, default=True,
-	                    help='Extend the size of the projections by padding with zeros.')
+	parser.add_argument('--phase_pad', dest='phase_pad', action='store_true',
+						help='Extend the size of the projections by padding with zeros.')
+	parser.add_argument('--no-phase_pad', dest='phase_pad', action='store_false')
+	# parser.add_argument('--phase_pad', type=bool, default=True,
+	#                     help='Extend the size of the projections by padding with zeros.')
 	parser.add_argument('--360', dest='fullturn', action='store_true', help='360 degrees scan.')
 	parser.add_argument('--overlap', type=int, default=0, help='Overlap parameter for 360 degrees scan.')
 	parser.add_argument('--rotside', type=str, default='left', help='Rotation axis side for 360 degrees scan.')
@@ -105,7 +106,7 @@ def main():
 	parser.add_argument('--crop', type=int, default=None, nargs='+',
 	                    help='Crop reconstruction volume with parameters: [X_start, X_size, Y_start, Y_size, Z_start, Z_size]. If argument is negative the corresponding axis is not cropped.')
 	parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help='Verbose output.')
-	parser.set_defaults(fullturn=False, phase=False, circ_mask=False, write_midplanes=False, verbose=False) # phase_pad=False,
+	parser.set_defaults(fullturn=False, phase=False, phase_pad=True, circ_mask=False, write_midplanes=False, verbose=False)
 
 	args = parser.parse_args()
 
