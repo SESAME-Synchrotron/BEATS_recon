@@ -22,5 +22,3 @@ python /PETRA/SED/BEATS/IH/scratch/scripts/BEATS_recon.py /PETRA/SED/BEATS/IH/fi
 
 # Notes:
 # - !!!!!! Any python call on gpunode1 returns "Bus error (core dumped)"
-
-test
