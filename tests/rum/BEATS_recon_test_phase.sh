@@ -21,4 +21,4 @@ python /PETRA/SED/BEATS/IH/scratch/scripts/BEATS_recon.py /PETRA/SED/BEATS/IH/fi
 # with `--no-phase_pad` this call is stuck infinitely on cpunode. Even killing python processes one by one does not help
 
 # Notes:
-# - !!!!!! Any python call on gpunode1 returns "Bus error (core dumped)"
+# - !!!!!! Any python call on gpunode1 returns "Bus error (core dumped)".
