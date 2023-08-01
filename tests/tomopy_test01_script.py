@@ -79,3 +79,5 @@ time_end = time()
 execution_time = time_end - time_start
 
 logging.info("Completed in {} s".format(str(execution_time)))
+
+print("this is a test")
