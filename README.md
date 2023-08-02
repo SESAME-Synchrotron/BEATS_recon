@@ -4,7 +4,15 @@
 Datasets for running the tests can be found on the [TomoBank](https://tomobank.readthedocs.io/en/latest/)
 
 ## BEATS recon notebook
-- [ ] pipeline / narrative
+- [ ] pipeline / narrative in single notebooks
+    - [X] Minimal absorption pipeline
+    - [X] Phase-contrast pipeline
+    - [X] Inspect data with napari
+    - [X] Convert 360 degree scan to 180
+    - [X] Load separate theta array; Compare with simulated theta
+    - [ ] Convert reconstruction to `uint8` or `uint16`
+    - [ ] Stripe removal
+    - [ ] Ring artefact correction
 - [ ] [mybinder](https://mybinder.org/)
 - [X] load HDF5
   - [X] load range
