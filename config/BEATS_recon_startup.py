@@ -1,3 +1,6 @@
+# Startup configuration script for TomoPy reconstructions at SESAME BEATS
+# Copy this file to the IPython startup directory (~/.ipython/profile_default/startup)
+
 # add local path to reconstruction utilities repo
 import sys
 sys.path.append('/home/beats/PycharmProjects/recon_utils')

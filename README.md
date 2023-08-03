@@ -142,3 +142,24 @@ ___
     - Phase retrieval recon (Paganin) using TomoPy
 - [TomoPy TEST 3](examples/TomoPy_test03_tomopy-cli.ipynb)
     - Instructions for recon using the TomoPy Command Line Interface (tomopy-cli)
+
+---
+## Notes:
+
+#### Add and activate a TomoPy kernel in Jupyter:
+
+Check and activate the environment where ipython is living 
+```commandline
+conda env list
+source activate base
+```
+
+Install TomoPy kernel in it
+```commandline
+python -m ipykernel install --user --name tomopy --display-name "conda (tomopy_source)"
+```
+
+Lanuch Jupyter Notebook
+```commandline
+jupyter notebook &
+```
