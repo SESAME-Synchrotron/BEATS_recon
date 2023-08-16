@@ -1,7 +1,7 @@
 ## solara
 Run solara app with
 ```commandline
-solara run multipage-demo2-package.pages --host localhost
+solara run alrecon.pages --host localhost
 ```
 
 
