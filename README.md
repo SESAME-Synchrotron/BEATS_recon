@@ -146,7 +146,7 @@ ___
 ---
 ## Notes:
 
-#### Add and activate a TomoPy kernel in Jupyter:
+### Add and activate a TomoPy kernel in Jupyter:
 
 Check and activate the environment where ipython is living 
 ```commandline
@@ -162,4 +162,9 @@ python -m ipykernel install --user --name tomopy --display-name "conda (tomopy_s
 Lanuch Jupyter Notebook
 ```commandline
 jupyter notebook &
+```
+
+### Run [solara](https://solara.dev/api/file_browser) app on localhost
+```commandline
+solara run file_browser.py --host localhost
 ```

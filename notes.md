@@ -1,3 +1,10 @@
+## solara
+Run solara app with
+```commandline
+solara run multipage-demo2-package.pages --host localhost
+```
+
+
 ## ImageJ and Python
 - https://imagej.net/scripting/python
 - https://github.com/imagej/pyimagej
