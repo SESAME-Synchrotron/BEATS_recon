@@ -17,10 +17,14 @@ cor_dir = solara.reactive("/home/gianthk/Data/BEATS/IH/scratch/pippo/cor")
 ncore = solara.reactive(4)
 algorithms = ["gridrec", "fbp_cuda"]
 algorithm = solara.reactive("gridrec")
-COR_range = solara.reactive((1260, 1300))
+# COR_range_min = solara.reactive(1260)
+# COR_range_max = solara.reactive(1300)
+norm_auto = solara.reactive(True)
+COR_range = solara.reactive((1260, 1300)) # COR_range_min.value, COR_range_max.value
 COR_slice_ind = solara.reactive(1000) # int(projs.shape[0]/2)
 COR_steps = [0.5, 1, 2, 5, 10]
 COR_step = solara.reactive(1)
+COR_auto = solara.reactive(True)
 continuous_update = solara.reactive(True)
 COR = solara.reactive(1280)
 CORguess = solara.reactive(1280)
@@ -61,26 +65,33 @@ def load_and_normalize(filename):
     print("Dark fields size: ", darks[:, :, :].shape[:])
     print("Theta array size: ", theta.shape[:])
 
-    projs = tomopy.normalize(projs, flats, darks, ncore=ncore.value, averaging=averaging.value)
-    print("Sinogram: normalized.")
+    if norm_auto.value:
+        projs = tomopy.normalize(projs, flats, darks, ncore=ncore.value, averaging=averaging.value)
+        print("Sinogram: normalized.")
 
-    projs = tomopy.minus_log(projs, ncore=ncore.value)
-    print("Sinogram: - log transformed.")
+        projs = tomopy.minus_log(projs, ncore=ncore.value)
+        print("Sinogram: - log transformed.")
+
+    if COR_auto.value:
+        if COR_algorithm.value is "Vo":
+            CORguess.value = tomopy.find_center_vo(projs, ncore=ncore.value)
+            print("Automatic detected COR: ", CORguess.value, " - tomopy.find_center_vo")
+        elif COR_algorithm.value is "TomoPy":
+            CORguess.value = tomopy.find_center(projs, theta, init=projs.shape[2]/2, tol=0.5)
+            print("Automatic detected COR: ", CORguess.value, " - tomopy.find_center")
+
+        COR.set(CORguess.value)
+
     process_status.set(False)
-
-    if COR_algorithm.value is "Vo":
-        CORguess.value = tomopy.find_center_vo(projs, ncore=ncore.value)
-        print("Automatic detected COR: ", CORguess.value, " - tomopy.find_center_vo")
-    elif COR_algorithm.value is "TomoPy":
-        CORguess.value = tomopy.find_center(projs, theta, init=projs.shape[2]/2, tol=0.5)
-        print("Automatic detected COR: ", CORguess.value, " - tomopy.find_center")
-
-    COR.set(CORguess.value)
-
 
 def write_cor():
     process_status.set(True)
-    tomopy.write_center(projs, theta, cor_dir.value, [COR_range.value[0], COR_range.value[1], COR_step.value]) # COR_slice_ind.value
+    tomopy.write_center(projs,
+                        theta,
+                        cor_dir.value,
+                        [COR_range.value[0], COR_range.value[1], COR_step.value],
+                        [int(COR_slice_ind.value-sino_range.value[0])]
+                        )
     print("Reconstructed slice with COR range: ", ([COR_range.value[0], COR_range.value[1], COR_step.value]))
     process_status.set(False)
 
@@ -111,14 +122,21 @@ def CORdisplay():
 
 @solara.component
 def CORinspect():
-    solara.Markdown(f"### COR inspection")
 
-    with solara.Row(gap="10px", justify="space-around"):
-        with solara.Column(style={"width": "450px"}):
-            solara.SliderRangeInt("COR range", value=COR_range, step=5, min=0, max=2160)
-            solara.Markdown(f"COR range: {COR_range.value}")
-        # solara.SliderRangeInt("COR step", value=COR_step, min=0.5, max=10)
-        solara.SliderValue("COR step", value=COR_step, values=COR_steps)
+    # COR_range_min, set_COR_range_min = solara.use_state(COR_range.value[0])  # local state
+    # solara.Markdown(f"### COR inspection")
+
+    # with solara.Row(gap="20px", justify="space-around"):
+    with solara.Column(): # style={"width": "450px"}
+        with solara.Row():
+            # solara.InputInt("Min", value=COR_range_min, continuous_update=False, on_value=set_COR_range_min)
+            solara.Markdown(f"Min: {COR_range.value[0]}")
+            solara.SliderRangeInt("COR range", value=COR_range, step=5, min=0, max=projs.shape[2], thumb_label="always")
+            solara.Markdown(f"Max: {COR_range.value[1]}")
+        # solara.Markdown(f"COR range: {COR_range.value}")
+        with solara.Row():
+            solara.SliderInt("COR slice", value=COR_slice_ind, step=5, min=sino_range.value[0], max=sino_range.value[1], thumb_label="always")
+            solara.SliderValue("COR step", value=COR_step, values=COR_steps)
 
 @solara.component
 def SetCOR():
@@ -158,26 +176,18 @@ def FileSelect():
 
 @solara.component
 def FileLoad():
-    with solara.Card("", style={"max-width": "800px"}, margin=0, classes=["my-2"]):
+    with solara.Card("", margin=0, classes=["my-2"]): # style={"max-width": "800px"},
         global h5file
 
         with solara.Column():
-            solara.Markdown(f"**Sinogram range**: {sino_range.value}")
-            # with solara.Row():
-            #     solara.Button("Reset", on_click=lambda: sino_range.set((900, 1100)))
-
-            with solara.Row(gap="10px", justify="space-around"):
-            # with solara.Column():
-                solara.SliderRangeInt("Sinogram range", value=sino_range, min=0, max=2160)
-                # with solara.Padding(2):
-                solara.Button(label="Load data", icon_name="mdi-cloud-download", on_click=lambda: load_and_normalize(h5file.value))
+            solara.SliderRangeInt("Sinogram range", value=sino_range, min=0, max=2160, thumb_label="always")
+            with solara.Row(): # gap="10px", justify="space-around"
+                # with solara.Column():
+                solara.Button(label="Load data", icon_name="mdi-cloud-download", on_click=lambda: load_and_normalize(h5file.value), style={"height": "40px", "width": "400px"})
+                solara.Switch(label="Normalize", value=norm_auto, style={"height": "20px"})
+                solara.Switch(label="Guess Center Of Rotation", value=COR_auto, style={"height": "20px"})
 
             solara.ProgressLinear(process_status.value)
-
-        # with solara.Sidebar():
-            # with solara.Card("Sidebar of FileLoad", margin=0, elevation=0):
-            #     solara.Markdown("*Markdown* **is** 👍")
-            # SharedComponent()
 
 @solara.component
 def DatasetInfo():
@@ -206,6 +216,8 @@ def Settings():
         solara.InputInt("Number of cores", value=ncore, continuous_update=False)
         solara.Select("Algorithm", value=algorithm, values=algorithms)
         solara.InputText("Reconstruction directory", value=recon_dir, continuous_update=False)
+        solara.Switch(label="Auto normalize dataset after loading", value=norm_auto, style={"height": "20px"})
+        solara.Switch(label="Attempt auto COR once dataset is loaded", value=COR_auto, style={"height": "40px"})
         solara.Select("Automatic COR algorithm", value=COR_algorithm, values=COR_algorithms)
         solara.InputText("COR directory", value=cor_dir, continuous_update=False)
         solara.InputText("FIJI launcher", value=Fiij_exe, continuous_update=False)
