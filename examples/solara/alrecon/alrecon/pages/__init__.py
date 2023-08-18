@@ -1,10 +1,11 @@
-import numpy
 import solara
 from pathlib import Path
 from typing import Optional, cast
+import numpy as np
 import dxchange
 import tomopy
 import os
+
 # import napari
 
 # Fiji executable
@@ -31,13 +32,13 @@ CORguess = solara.reactive(1280)
 COR_algorithms = ["Vo", "TomoPy"]
 COR_algorithm = solara.reactive("Vo")
 h5dir = "~/Data/" # remove??
-projs = numpy.zeros([0,0,0])
+projs = np.zeros([0,0,0])
 # flats = None
 # darks = None
-theta = numpy.zeros(0)
+theta = np.zeros(0)
 loaded_file = solara.reactive(False)
 process_status = solara.reactive(False)
-sino_range = solara.reactive((900, 1100))
+sino_range = solara.reactive((980, 1020))
 averaging = solara.reactive("median")
 # os.system(Fiji_exe_stack + cor_dir+'{:04.2f}'.format(COR[0])+'.tiff &')
 
@@ -73,14 +74,15 @@ def load_and_normalize(filename):
         print("Sinogram: - log transformed.")
 
     if COR_auto.value:
-        if COR_algorithm.value is "Vo":
+        if COR_algorithm.value == "Vo":
             CORguess.value = tomopy.find_center_vo(projs, ncore=ncore.value)
             print("Automatic detected COR: ", CORguess.value, " - tomopy.find_center_vo")
-        elif COR_algorithm.value is "TomoPy":
+        elif COR_algorithm.value == "TomoPy":
             CORguess.value = tomopy.find_center(projs, theta, init=projs.shape[2]/2, tol=0.5)
             print("Automatic detected COR: ", CORguess.value, " - tomopy.find_center")
 
         COR.set(CORguess.value)
+        COR_range.set((CORguess.value-20, CORguess.value+20))
 
     process_status.set(False)
 
@@ -90,7 +92,7 @@ def write_cor():
                         theta,
                         cor_dir.value,
                         [COR_range.value[0], COR_range.value[1], COR_step.value],
-                        [int(COR_slice_ind.value-sino_range.value[0])]
+                        ind=int(COR_slice_ind.value-sino_range.value[0])
                         )
     print("Reconstructed slice with COR range: ", ([COR_range.value[0], COR_range.value[1], COR_step.value]))
     process_status.set(False)
@@ -100,14 +102,13 @@ def DispH5FILE():
     # solara.Markdown("## Dataset information")
     # solara.Markdown(f"**File name**: {h5file.value}")
     return solara.Markdown(f'''
-        ## Dataset information
-        * File name: <mark>`{h5file.value}`</mark>
-        * Proj size: {projs[:, :, :].shape[:]}
-        * Sinogram range: `{sino_range.value}`
-        * Recon dir: <mark>`{recon_dir.value}`</mark>
-        * COR dir: <mark>`{cor_dir.value}`</mark>
-        ''')
-
+            ## Dataset information
+            * File name: <mark>`{h5file.value}`</mark>
+            * Proj size: {projs[:, :, :].shape[:]}
+            * Sinogram range: `{sino_range.value}`
+            * Recon dir: <mark>`{recon_dir.value}`</mark>
+            * COR dir: <mark>`{cor_dir.value}`</mark>
+            ''')
     # solara.Markdown(f"* Sinogram range: `{sino_range.value}`")
     # solara.Markdown(f"* Recon dir: {recon_dir.value}")
     # solara.Markdown(f"COR dir: {cor_dir.value}")
@@ -164,7 +165,7 @@ def FijiViewer():
 
 @solara.component
 def FileSelect():
-    with solara.Card("Select HDF5 dataset file", margin=0, classes=["my-2"]): # style={"max-width": "800px"},
+    with solara.Card("Select HDF5 dataset file", margin=0, classes=["my-2"], style={"max-height": "400px"}): # style={"max-width": "800px"},
         global h5file
         global h5dir
 
