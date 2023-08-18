@@ -5,6 +5,7 @@ import numpy as np
 import dxchange
 import tomopy
 import os
+import random
 
 # import napari
 
@@ -28,19 +29,32 @@ COR_step = solara.reactive(1)
 COR_auto = solara.reactive(True)
 continuous_update = solara.reactive(True)
 COR = solara.reactive(1280)
-CORguess = solara.reactive(1280)
+COR_guess = solara.reactive(1280)
 COR_algorithms = ["Vo", "TomoPy"]
 COR_algorithm = solara.reactive("Vo")
 h5dir = "~/Data/" # remove??
 projs = np.zeros([0,0,0])
+recon = np.zeros([0,0,0])
 # flats = None
 # darks = None
 theta = np.zeros(0)
 loaded_file = solara.reactive(False)
-process_status = solara.reactive(False)
+load_status = solara.reactive(False)
+cor_status = solara.reactive(False)
+recon_status = solara.reactive(False)
 sino_range = solara.reactive((980, 1020))
 averaging = solara.reactive("median")
 # os.system(Fiji_exe_stack + cor_dir+'{:04.2f}'.format(COR[0])+'.tiff &')
+
+def generate_title():
+    titles = ["Al-Recon. CT reconstruction for dummies",
+              "Al-Recon. Have fun reconstructing",
+              "Al-Recon. Anyone can reconstruct",
+              "Al-Recon. The reconstruction GUI",
+              "Al-Recon. It has never been so easy",
+              "Al-Recon. CT reconstruction made simple",
+              ]
+    return titles[random.randint(0, len(titles) - 1)]
 
 def view_projs_with_napari():
     print("not implemented yet")
@@ -56,7 +70,7 @@ def load_and_normalize(filename):
     # global darks
     global theta
     global loaded_file
-    process_status.set(True)
+    load_status.set(True)
 
     projs, flats, darks, theta = dxchange.read_aps_32id(filename, exchange_rank=0, sino=(sino_range.value[0], sino_range.value[1], 1))
     loaded_file.set(True)
@@ -73,21 +87,27 @@ def load_and_normalize(filename):
         projs = tomopy.minus_log(projs, ncore=ncore.value)
         print("Sinogram: - log transformed.")
 
+    load_status.set(False)
+    COR_slice_ind.set(int(np.mean(sino_range.value)))
+
     if COR_auto.value:
-        if COR_algorithm.value == "Vo":
-            CORguess.value = tomopy.find_center_vo(projs, ncore=ncore.value)
-            print("Automatic detected COR: ", CORguess.value, " - tomopy.find_center_vo")
-        elif COR_algorithm.value == "TomoPy":
-            CORguess.value = tomopy.find_center(projs, theta, init=projs.shape[2]/2, tol=0.5)
-            print("Automatic detected COR: ", CORguess.value, " - tomopy.find_center")
+        guess_COR()
 
-        COR.set(CORguess.value)
-        COR_range.set((CORguess.value-20, CORguess.value+20))
+def guess_COR():
+    cor_status.set(True)
+    if COR_algorithm.value == "Vo":
+        COR_guess.value = tomopy.find_center_vo(projs, ncore=ncore.value)
+        print("Automatic detected COR: ", COR_guess.value, " - tomopy.find_center_vo")
+    elif COR_algorithm.value == "TomoPy":
+        COR_guess.value = tomopy.find_center(projs, theta)[0]
+        print("Automatic detected COR: ", COR_guess.value, " - tomopy.find_center")
 
-    process_status.set(False)
+    COR.set(COR_guess.value)
+    COR_range.set((COR_guess.value - 20, COR_guess.value + 20))
+    cor_status.set(False)
 
 def write_cor():
-    process_status.set(True)
+    cor_status.set(True)
     tomopy.write_center(projs,
                         theta,
                         cor_dir.value,
@@ -95,15 +115,32 @@ def write_cor():
                         ind=int(COR_slice_ind.value-sino_range.value[0])
                         )
     print("Reconstructed slice with COR range: ", ([COR_range.value[0], COR_range.value[1], COR_step.value]))
-    process_status.set(False)
+    cor_status.set(False)
+
+def reconstruct_dataset():
+    global projs
+    global theta
+    global recon
+    recon_status.set(True)
+    recon = tomopy.recon(projs,
+                         theta,
+                         center=COR.value,
+                         algorithm=algorithm.value,
+                         sinogram_order=False,
+                         ncore=ncore.value)
+    print("Dataset reconstructed.")
+    recon_status.set(False)
+
 
 @solara.component
 def CORdisplay():
     with solara.Card("", style={"max-width": "800px"}, margin=0, classes=["my-2"]):
         with solara.Row(gap="10px", justify="space-around"):
-            solara.InputFloat("COR guess", value=CORguess, continuous_update=False)
+            solara.Button(label="Guess COR", icon_name="mdi-play", on_click=lambda: guess_COR())
+            solara.InputFloat("COR guess", value=COR_guess, continuous_update=False)
             # solara.InputText("COR", value=COR, continuous_update=continuous_update.value)
             SetCOR()
+        solara.ProgressLinear(cor_status.value)
 
 @solara.component
 def CORinspect():
@@ -130,7 +167,7 @@ def SetCOR():
 @solara.component
 def CORwrite():
     solara.Button(label="Write images with COR range", icon_name="mdi-play", on_click=lambda: write_cor())
-    solara.ProgressLinear(process_status.value)
+    solara.ProgressLinear(cor_status.value)
     solara.Button(label="inspect COR range images", icon_name="mdi-eye", on_click=lambda: view_cor_with_fiji())
 
 @solara.component
@@ -172,7 +209,7 @@ def FileLoad():
                 solara.Switch(label="Normalize", value=norm_auto, style={"height": "20px"})
                 solara.Switch(label="Guess Center Of Rotation", value=COR_auto, style={"height": "20px"})
 
-            solara.ProgressLinear(process_status.value)
+            solara.ProgressLinear(load_status.value)
 
 @solara.component
 def DispH5FILE():
@@ -202,7 +239,8 @@ def Recon():
     with solara.Card("CT reconstruction", style={"max-width": "800px"}, margin=0, classes=["my-2"]):
         with solara.Column():
             solara.Select("Algorithm", value=algorithm, values=algorithms)
-            solara.Button(label="Reconstruct", icon_name="mdi-car-turbocharger", on_click=lambda: load_and_normalize(h5file))
+            solara.Button(label="Reconstruct", icon_name="mdi-car-turbocharger", on_click=lambda: reconstruct_dataset())
+            solara.ProgressLinear(recon_status.value)
             solara.Button(label="Inspect", icon_name="mdi-eye", on_click=lambda: load_and_normalize(h5file))
             solara.Button(label="Write to disk", icon_name="mdi-content-save-all-outline", on_click=lambda: load_and_normalize(h5file))
 
@@ -240,7 +278,7 @@ def Page():
             # solara.Markdown("This is the sidebar at the home page!")
 
     with solara.Card("Load dataset"):
-        solara.Title("Al-Recon. CT reconstruction for dummies")
+        solara.Title(generate_title())
         # solara.Markdown("This is the home page")
         FileSelect()
         FileLoad()
