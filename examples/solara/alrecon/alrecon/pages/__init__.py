@@ -98,22 +98,6 @@ def write_cor():
     process_status.set(False)
 
 @solara.component
-def DispH5FILE():
-    # solara.Markdown("## Dataset information")
-    # solara.Markdown(f"**File name**: {h5file.value}")
-    return solara.Markdown(f'''
-            ## Dataset information
-            * File name: <mark>`{h5file.value}`</mark>
-            * Proj size: {projs[:, :, :].shape[:]}
-            * Sinogram range: `{sino_range.value}`
-            * Recon dir: <mark>`{recon_dir.value}`</mark>
-            * COR dir: <mark>`{cor_dir.value}`</mark>
-            ''')
-    # solara.Markdown(f"* Sinogram range: `{sino_range.value}`")
-    # solara.Markdown(f"* Recon dir: {recon_dir.value}")
-    # solara.Markdown(f"COR dir: {cor_dir.value}")
-
-@solara.component
 def CORdisplay():
     with solara.Card("", style={"max-width": "800px"}, margin=0, classes=["my-2"]):
         with solara.Row(gap="10px", justify="space-around"):
@@ -165,7 +149,7 @@ def FijiViewer():
 
 @solara.component
 def FileSelect():
-    with solara.Card("Select HDF5 dataset file", margin=0, classes=["my-2"], style={"max-height": "400px"}): # style={"max-width": "800px"},
+    with solara.Card("Select HDF5 dataset file", margin=0, classes=["my-2"], style={"max-height": "500px"}): # style={"max-width": "800px"},
         global h5file
         global h5dir
 
@@ -191,15 +175,26 @@ def FileLoad():
             solara.ProgressLinear(process_status.value)
 
 @solara.component
-def DatasetInfo():
-    global h5file
-    global projs
-    global loaded_file
+def DispH5FILE():
+    # solara.Markdown("## Dataset information")
+    # solara.Markdown(f"**File name**: {h5file.value}")
+    return solara.Markdown(f'''
+            ## Dataset information
+            * File name: <mark>`{Path(h5file.value).stem}`</mark>
+            * Proj size: {projs[:, :, :].shape[:]}
+            * Sinogram range: `{sino_range.value}`
+            ''')
+    # solara.Markdown(f"* Sinogram range: `{sino_range.value}`")
+    # solara.Markdown(f"* Recon dir: {recon_dir.value}")
+    # solara.Markdown(f"COR dir: {cor_dir.value}")
 
+@solara.component
+def DatasetInfo():
+    # global loaded_file
     # if loaded_file.value:
     with solara.VBox():
         solara.Markdown("### Dataset information")
-        solara.Info(f"File name: {h5file.value}", dense=True)
+        solara.Info(f"File name: {Path(h5file.value).stem}", dense=True)
         solara.Info(f"Proj size: {projs[:, :, :].shape[:]}", dense=True)
 
 @solara.component
@@ -212,17 +207,25 @@ def Recon():
             solara.Button(label="Write to disk", icon_name="mdi-content-save-all-outline", on_click=lambda: load_and_normalize(h5file))
 
 @solara.component
-def Settings():
+def OutputSettings(disabled=False, style=None):
+    with solara.Card("Output directories", margin=0, classes=["my-2"]): # style={"max-width": "500px"},
+        solara.InputText("Reconstruction directory", value=recon_dir, continuous_update=False, disabled=disabled)
+        solara.InputText("COR directory", value=cor_dir, continuous_update=False, disabled=disabled)
+
+@solara.component
+def DefaultSettings():
     with solara.Card("Default settings", style={"max-width": "500px"}, margin=0, classes=["my-2"]):
         solara.InputInt("Number of cores", value=ncore, continuous_update=False)
-        solara.Select("Algorithm", value=algorithm, values=algorithms)
-        solara.InputText("Reconstruction directory", value=recon_dir, continuous_update=False)
-        solara.Switch(label="Auto normalize dataset after loading", value=norm_auto, style={"height": "20px"})
-        solara.Switch(label="Attempt auto COR once dataset is loaded", value=COR_auto, style={"height": "40px"})
-        solara.Select("Automatic COR algorithm", value=COR_algorithm, values=COR_algorithms)
-        solara.InputText("COR directory", value=cor_dir, continuous_update=False)
-        solara.InputText("FIJI launcher", value=Fiij_exe, continuous_update=False)
         solara.InputText("Sinogram averaging:", value=averaging, continuous_update=False)
+        solara.Select("Auto COR algorithm", value=COR_algorithm, values=COR_algorithms)
+        solara.Switch(label="Normalize dataset upon loading", value=norm_auto, style={"height": "20px"})
+        solara.Switch(label="Attempt auto COR upon loading", value=COR_auto, style={"height": "40px"})
+        solara.InputText("FIJI launcher", value=Fiij_exe, continuous_update=False)
+
+@solara.component
+def ReconSettings():
+    with solara.Card("Reconstruction settings", style={"max-width": "500px"}, margin=0, classes=["my-2"]):
+        solara.Select("Algorithm", value=algorithm, values=algorithms)
 
 @solara.component
 def Page():
@@ -230,6 +233,7 @@ def Page():
         with solara.Card(margin=0, elevation=0):
             DispH5FILE()
             SetCOR()
+            OutputSettings(disabled=False)
             NapariViewer()
             FijiViewer()
             # DatasetInfo()

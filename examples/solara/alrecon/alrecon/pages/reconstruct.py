@@ -1,6 +1,6 @@
 import solara
 
-from . import NapariViewer, FijiViewer, SetCOR, DispH5FILE, Recon, CORwrite, CORinspect, CORdisplay
+from . import NapariViewer, FijiViewer, SetCOR, DispH5FILE, Recon, CORwrite, CORinspect, CORdisplay, OutputSettings
 
 from pathlib import Path
 from typing import Optional, cast
@@ -27,6 +27,7 @@ def Page():
         with solara.Card(margin=0, elevation=0):
             DispH5FILE()
             SetCOR()
+            OutputSettings(disabled=False)
             NapariViewer()
             FijiViewer()
 
