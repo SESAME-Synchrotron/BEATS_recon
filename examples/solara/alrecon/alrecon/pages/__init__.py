@@ -1,6 +1,6 @@
 import solara
 from pathlib import Path
-from typing import Optional, cast
+# from typing import Optional, cast
 import numpy as np
 import dxchange
 import tomopy
@@ -9,9 +9,9 @@ import random
 
 # import napari
 
-# Fiji executable
+# ImageJ executable
 Fiij_exe = solara.reactive('/opt/fiji-linux64/Fiji.app/ImageJ-linux64')
-Fiji_exe_stack = Fiij_exe.value + ' -macro FolderOpener_virtual.ijm '
+ImageJ_exe_stack = Fiij_exe.value + ' -macro FolderOpener_virtual.ijm '
 
 h5file = solara.reactive("")
 recon_dir = solara.reactive("/home/gianthk/Data/BEATS/IH/scratch/pippo/recon")
@@ -19,19 +19,17 @@ cor_dir = solara.reactive("/home/gianthk/Data/BEATS/IH/scratch/pippo/cor")
 ncore = solara.reactive(4)
 algorithms = ["gridrec", "fbp_cuda"]
 algorithm = solara.reactive("gridrec")
-# COR_range_min = solara.reactive(1260)
-# COR_range_max = solara.reactive(1300)
 norm_auto = solara.reactive(True)
 COR_range = solara.reactive((1260, 1300)) # COR_range_min.value, COR_range_max.value
 COR_slice_ind = solara.reactive(1000) # int(projs.shape[0]/2)
 COR_steps = [0.5, 1, 2, 5, 10]
 COR_step = solara.reactive(1)
-COR_auto = solara.reactive(True)
+COR_auto = solara.reactive(False)
 continuous_update = solara.reactive(True)
 COR = solara.reactive(1280)
 COR_guess = solara.reactive(1280)
 COR_algorithms = ["Vo", "TomoPy"]
-COR_algorithm = solara.reactive("Vo")
+COR_algorithm = solara.reactive("TomoPy") # "Vo"
 h5dir = "~/Data/" # remove??
 projs = np.zeros([0,0,0])
 recon = np.zeros([0,0,0])
@@ -41,16 +39,16 @@ theta = np.zeros(0)
 loaded_file = solara.reactive(False)
 load_status = solara.reactive(False)
 cor_status = solara.reactive(False)
+reconstructed = solara.reactive(False)
 recon_status = solara.reactive(False)
 sino_range = solara.reactive((980, 1020))
 averaging = solara.reactive("median")
-# os.system(Fiji_exe_stack + cor_dir+'{:04.2f}'.format(COR[0])+'.tiff &')
 
 def generate_title():
     titles = ["Al-Recon. CT reconstruction for dummies",
               "Al-Recon. Have fun reconstructing",
               "Al-Recon. Anyone can reconstruct",
-              "Al-Recon. The reconstruction GUI",
+              "Al-Recon. The CT reconstruction GUI",
               "Al-Recon. It has never been so easy",
               "Al-Recon. CT reconstruction made simple",
               ]
@@ -60,16 +58,18 @@ def view_projs_with_napari():
     print("not implemented yet")
     # viewer = napari.view_image(projs)
 
-def view_cor_with_fiji():
-    print("not implemented yet")
-    os.system(Fiji_exe_stack + cor_dir.value + '/{:04.2f}'.format(COR_range.value[0]) + '.tiff &')
+def view_cor_with_ImageJ():
+    os.system(ImageJ_exe_stack + cor_dir.value + '/{:04.2f}'.format(COR_range.value[0]) + '.tiff &')
+
+def view_recon_with_ImageJ():
+    os.system(ImageJ_exe_stack + recon_dir.value + '/slice.tiff &')
 
 def load_and_normalize(filename):
     global projs
     # global flats
     # global darks
     global theta
-    global loaded_file
+    # global loaded_file
     load_status.set(True)
 
     projs, flats, darks, theta = dxchange.read_aps_32id(filename, exchange_rank=0, sino=(sino_range.value[0], sino_range.value[1], 1))
@@ -130,13 +130,19 @@ def reconstruct_dataset():
                          ncore=ncore.value)
     print("Dataset reconstructed.")
     recon_status.set(False)
+    reconstructed.set(True)
 
+def write_recon():
+    fileout = recon_dir.value + '/slice.tiff'
+    recon_status.set(True)
+    dxchange.writer.write_tiff_stack(recon, fname=fileout, axis=0, digit=4, start=0, overwrite=True)
+    recon_status.set(False)
 
 @solara.component
 def CORdisplay():
     with solara.Card("", style={"max-width": "800px"}, margin=0, classes=["my-2"]):
         with solara.Row(gap="10px", justify="space-around"):
-            solara.Button(label="Guess COR", icon_name="mdi-play", on_click=lambda: guess_COR())
+            solara.Button(label="Guess COR", icon_name="mdi-play", on_click=lambda: guess_COR(), disabled=not(loaded_file.value))
             solara.InputFloat("COR guess", value=COR_guess, continuous_update=False)
             # solara.InputText("COR", value=COR, continuous_update=continuous_update.value)
             SetCOR()
@@ -166,9 +172,9 @@ def SetCOR():
 
 @solara.component
 def CORwrite():
-    solara.Button(label="Write images with COR range", icon_name="mdi-play", on_click=lambda: write_cor())
+    solara.Button(label="Write images with COR range", icon_name="mdi-play", on_click=lambda: write_cor(), disabled=not(loaded_file.value))
     solara.ProgressLinear(cor_status.value)
-    solara.Button(label="inspect COR range images", icon_name="mdi-eye", on_click=lambda: view_cor_with_fiji())
+    solara.Button(label="inspect COR range images", icon_name="mdi-eye", on_click=lambda: view_cor_with_ImageJ())
 
 @solara.component
 def NapariViewer():
@@ -178,11 +184,11 @@ def NapariViewer():
             solara.Button(label="Reconstruction", icon_name="mdi-eye", on_click=lambda: view_recon_with_napari(), text=True, outlined=True) # , attributes={"href": github_url, "target": "_blank"}
 
 @solara.component
-def FijiViewer():
-    with solara.Card("Fiji viewer", style={"max-width": "500px"}, margin=0, classes=["my-2"]):
+def ImageJViewer():
+    with solara.Card("ImageJ viewer", subtitle="Launch ImageJ to inspect:", style={"max-width": "500px"}, margin=0, classes=["my-2"]):
         with solara.Row(gap="10px", justify="space-around"):
-            solara.Button(label="COR range", icon_name="mdi-eye", on_click=lambda: view_cor_with_fiji(), text=True, outlined=True) # , attributes={"href": github_url, "target": "_blank"}
-            solara.Button(label="Reconstruction", icon_name="mdi-eye", on_click=lambda: view_recon_with_fiji(), text=True, outlined=True) # , attributes={"href": github_url, "target": "_blank"}
+            solara.Button(label="COR range", icon_name="mdi-eye", on_click=lambda: view_cor_with_ImageJ(), text=True, outlined=True) # , attributes={"href": github_url, "target": "_blank"}
+            solara.Button(label="Reconstruction", icon_name="mdi-eye", on_click=lambda: view_recon_with_ImageJ(), text=True, outlined=True) # , attributes={"href": github_url, "target": "_blank"}
 
 @solara.component
 def FileSelect():
@@ -205,7 +211,7 @@ def FileLoad():
             solara.SliderRangeInt("Sinogram range", value=sino_range, min=0, max=2160, thumb_label="always")
             with solara.Row(): # gap="10px", justify="space-around"
                 # with solara.Column():
-                solara.Button(label="Load data", icon_name="mdi-cloud-download", on_click=lambda: load_and_normalize(h5file.value), style={"height": "40px", "width": "400px"})
+                solara.Button(label="Load data", icon_name="mdi-cloud-download", on_click=lambda: load_and_normalize(h5file.value), style={"height": "40px", "width": "400px"}, disabled=not(os.path.splitext(h5file.value)[1]=='.h5'))
                 solara.Switch(label="Normalize", value=norm_auto, style={"height": "20px"})
                 solara.Switch(label="Guess Center Of Rotation", value=COR_auto, style={"height": "20px"})
 
@@ -239,10 +245,10 @@ def Recon():
     with solara.Card("CT reconstruction", style={"max-width": "800px"}, margin=0, classes=["my-2"]):
         with solara.Column():
             solara.Select("Algorithm", value=algorithm, values=algorithms)
-            solara.Button(label="Reconstruct", icon_name="mdi-car-turbocharger", on_click=lambda: reconstruct_dataset())
+            solara.Button(label="Reconstruct", icon_name="mdi-car-turbocharger", on_click=lambda: reconstruct_dataset(), disabled=not(loaded_file.value))
             solara.ProgressLinear(recon_status.value)
-            solara.Button(label="Inspect", icon_name="mdi-eye", on_click=lambda: load_and_normalize(h5file))
-            solara.Button(label="Write to disk", icon_name="mdi-content-save-all-outline", on_click=lambda: load_and_normalize(h5file))
+            solara.Button(label="Inspect with Napari", icon_name="mdi-eye", on_click=lambda: load_and_normalize(h5file), disabled=not(reconstructed.value))
+            solara.Button(label="Write to disk", icon_name="mdi-content-save-all-outline", on_click=lambda: write_recon(), disabled=not(reconstructed.value))
 
 @solara.component
 def OutputSettings(disabled=False, style=None):
@@ -258,7 +264,7 @@ def DefaultSettings():
         solara.Select("Auto COR algorithm", value=COR_algorithm, values=COR_algorithms)
         solara.Switch(label="Normalize dataset upon loading", value=norm_auto, style={"height": "20px"})
         solara.Switch(label="Attempt auto COR upon loading", value=COR_auto, style={"height": "40px"})
-        solara.InputText("FIJI launcher", value=Fiij_exe, continuous_update=False)
+        solara.InputText("ImageJ launcher", value=Fiij_exe, continuous_update=False)
 
 @solara.component
 def ReconSettings():
@@ -273,7 +279,7 @@ def Page():
             SetCOR()
             OutputSettings(disabled=False)
             NapariViewer()
-            FijiViewer()
+            ImageJViewer()
             # DatasetInfo()
             # solara.Markdown("This is the sidebar at the home page!")
 

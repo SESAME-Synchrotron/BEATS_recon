@@ -1,11 +1,11 @@
 import solara
 
-from . import NapariViewer, FijiViewer, SetCOR, DispH5FILE, Recon, CORwrite, CORinspect, CORdisplay, OutputSettings
+from . import NapariViewer, ImageJViewer, SetCOR, DispH5FILE, Recon, CORwrite, CORinspect, CORdisplay, OutputSettings
 
-from pathlib import Path
-from typing import Optional, cast
-import dxchange
-import tomopy
+# from pathlib import Path
+# from typing import Optional, cast
+# import dxchange
+# import tomopy
 # import napari
 
 github_url = solara.util.github_url(__file__)
@@ -29,10 +29,10 @@ def Page():
             SetCOR()
             OutputSettings(disabled=False)
             NapariViewer()
-            FijiViewer()
+            ImageJViewer()
 
     with solara.Card():
-        solara.Title("Find the Center Of Rotation (COR)")
+        solara.Title("CT reconstruction") # "Find the Center Of Rotation (COR)"
         CORwriteLocal()
         Recon()
         # DatasetInfo()
