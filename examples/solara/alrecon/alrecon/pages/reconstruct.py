@@ -17,9 +17,6 @@ def CORwriteLocal():
         with solara.Column():
             CORdisplay()
             CORinspect()
-        # with solara.Row(gap="10px", justify="space-around"):
-            CORwrite()
-            # solara.Button(label="Inspect", icon_name="mdi-eye", on_click=lambda: load_and_normalize(h5file))
 
 @solara.component
 def Page():

@@ -150,31 +150,25 @@ def CORdisplay():
 
 @solara.component
 def CORinspect():
+    with solara.Card(subtitle="COR manual inspection", style={"max-width": "800px"}, margin=0, classes=["my-2"]):
+        with solara.Column(): # style={"width": "450px"}
+            with solara.Row():
+                solara.Markdown(f"Min: {COR_range.value[0]}")
+                solara.SliderRangeInt("COR range", value=COR_range, step=5, min=0, max=projs.shape[2], thumb_label="always")
+                solara.Markdown(f"Max: {COR_range.value[1]}")
+            with solara.Row():
+                solara.SliderInt("COR slice", value=COR_slice_ind, step=5, min=sino_range.value[0], max=sino_range.value[1], thumb_label="always")
+                solara.SliderValue("COR step", value=COR_step, values=COR_steps)
 
-    # COR_range_min, set_COR_range_min = solara.use_state(COR_range.value[0])  # local state
-    # solara.Markdown(f"### COR inspection")
-
-    # with solara.Row(gap="20px", justify="space-around"):
-    with solara.Column(): # style={"width": "450px"}
-        with solara.Row():
-            # solara.InputInt("Min", value=COR_range_min, continuous_update=False, on_value=set_COR_range_min)
-            solara.Markdown(f"Min: {COR_range.value[0]}")
-            solara.SliderRangeInt("COR range", value=COR_range, step=5, min=0, max=projs.shape[2], thumb_label="always")
-            solara.Markdown(f"Max: {COR_range.value[1]}")
-        # solara.Markdown(f"COR range: {COR_range.value}")
-        with solara.Row():
-            solara.SliderInt("COR slice", value=COR_slice_ind, step=5, min=sino_range.value[0], max=sino_range.value[1], thumb_label="always")
-            solara.SliderValue("COR step", value=COR_step, values=COR_steps)
+            solara.Button(label="Write images with COR range", icon_name="mdi-play", on_click=lambda: write_cor(),
+                          disabled=not (loaded_file.value))
+            solara.ProgressLinear(cor_status.value)
+            solara.Button(label="inspect COR range images", icon_name="mdi-eye",
+                          on_click=lambda: view_cor_with_ImageJ())
 
 @solara.component
 def SetCOR():
     solara.InputFloat("Your COR choice", value=COR, continuous_update=True)
-
-@solara.component
-def CORwrite():
-    solara.Button(label="Write images with COR range", icon_name="mdi-play", on_click=lambda: write_cor(), disabled=not(loaded_file.value))
-    solara.ProgressLinear(cor_status.value)
-    solara.Button(label="inspect COR range images", icon_name="mdi-eye", on_click=lambda: view_cor_with_ImageJ())
 
 @solara.component
 def NapariViewer():
