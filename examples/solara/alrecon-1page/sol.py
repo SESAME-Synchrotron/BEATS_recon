@@ -1,13 +1,13 @@
 import solara
 from pathlib import Path
-# from typing import Optional, cast
 import numpy as np
 import dxchange
 import tomopy
 import os
 import random
+import napari
 
-# ImageJ executable
+# path to ImageJ executable
 Fiij_exe = solara.reactive('/opt/fiji-linux64/Fiji.app/ImageJ-linux64')
 ImageJ_exe_stack = Fiij_exe.value + ' -macro FolderOpener_virtual.ijm '
 
@@ -31,16 +31,18 @@ COR_algorithm = solara.reactive("TomoPy") # "Vo"
 h5dir = "~/Data/" # remove??
 projs = np.zeros([0,0,0])
 recon = np.zeros([0,0,0])
-# flats = None
-# darks = None
 theta = np.zeros(0)
 loaded_file = solara.reactive(False)
 load_status = solara.reactive(False)
 cor_status = solara.reactive(False)
 reconstructed = solara.reactive(False)
 recon_status = solara.reactive(False)
+recon_counter = solara.reactive(0)
 sino_range = solara.reactive((980, 1020))
-averaging = solara.reactive("median")
+proj_range = solara.reactive((0,4001))
+n_proj = solara.reactive(1001)
+proj_range_enable = solara.reactive(False)
+averaging = solara.reactive("mean") # "median"
 
 def generate_title():
     titles = ["Al-Recon. CT reconstruction for dummies",
@@ -53,27 +55,23 @@ def generate_title():
     return titles[random.randint(0, len(titles) - 1)]
 
 def view_projs_with_napari():
-    # from qtpy.QtWidgets import QApplication
-    # app = QApplication([])
-    # print(app)
-    # app.exec_()
+    viewer = napari.view_image(projs)
 
-    import napari
-    from napari.settings import get_settings
-
-    get_settings().application.ipy_interactive = False
-    viewer = napari.Viewer()
-
-    # print(napari._qt.get_app())
-    # viewer = napari.view_image(projs)
-    # viewer = napari.imshow(projs)
-    # napari.run()
+def view_recon_with_napari():
+    viewer = napari.view_image(recon)
 
 def view_cor_with_ImageJ():
     os.system(ImageJ_exe_stack + cor_dir.value + '/{:04.2f}'.format(COR_range.value[0]) + '.tiff &')
 
 def view_recon_with_ImageJ():
     os.system(ImageJ_exe_stack + recon_dir.value + '/slice.tiff &')
+
+def get_n_proj():
+    try:
+        n_proj.set(int(dxchange.read_hdf5(h5file.value, '/measurement/instrument/camera/dimension_y')[0]))
+    except:
+        print("Cannot read n. of projections")
+
 
 def load_and_normalize(filename):
     global projs
@@ -83,7 +81,11 @@ def load_and_normalize(filename):
     # global loaded_file
     load_status.set(True)
 
-    projs, flats, darks, theta = dxchange.read_aps_32id(filename, exchange_rank=0, sino=(sino_range.value[0], sino_range.value[1], 1))
+    if proj_range_enable.value:
+        projs, flats, darks, _ = dxchange.read_aps_32id(filename, exchange_rank=0, sino=(sino_range.value[0], sino_range.value[1], 1), proj=(proj_range.value[0], proj_range.value[1], 1))
+        theta = np.radians(dxchange.read_hdf5(filename, 'exchange/theta', slc=((proj_range.value[0], proj_range.value[1], 1),)))
+    else:
+        projs, flats, darks, theta = dxchange.read_aps_32id(filename, exchange_rank=0, sino=(sino_range.value[0], sino_range.value[1], 1))
     loaded_file.set(True)
 
     print("Dataset size: ", projs[:, :, :].shape[:], " - dtype: ", projs.dtype)
@@ -142,6 +144,7 @@ def reconstruct_dataset():
     print("Dataset reconstructed.")
     recon_status.set(False)
     reconstructed.set(True)
+    recon_counter.set(recon_counter.value + 1)
 
 def write_recon():
     fileout = recon_dir.value + '/slice.tiff'
@@ -183,10 +186,10 @@ def SetCOR():
 
 @solara.component
 def NapariViewer():
-    with solara.Card("Napari viewer", style={"max-width": "500px"}, margin=0, classes=["my-2"]):
+    with solara.Card("Napari viewer", style={"max-width": "400px"}, margin=0, classes=["my-2"]):
         with solara.Row(gap="10px", justify="space-around"):
-            solara.Button(label="Sinogram", icon_name="mdi-eye", on_click=lambda: view_projs_with_napari(), text=True, outlined=True) # , attributes={"href": github_url, "target": "_blank"}
-            solara.Button(label="Reconstruction", icon_name="mdi-eye", on_click=lambda: view_recon_with_napari(), text=True, outlined=True) # , attributes={"href": github_url, "target": "_blank"}
+            solara.Button(label="Sinogram", icon_name="mdi-eye", on_click=lambda: view_projs_with_napari(), text=True, outlined=True, disabled=not(loaded_file.value)) # , attributes={"href": github_url, "target": "_blank"}
+            solara.Button(label="Reconstruction", icon_name="mdi-eye", on_click=lambda: view_recon_with_napari(), text=True, outlined=True, disabled=not(reconstructed.value)) # , attributes={"href": github_url, "target": "_blank"}
 
 @solara.component
 def ImageJViewer():
@@ -209,11 +212,16 @@ def FileSelect():
 
 @solara.component
 def FileLoad():
+
     with solara.Card("", margin=0, classes=["my-2"]): # style={"max-width": "800px"},
         global h5file
 
         with solara.Column():
             solara.SliderRangeInt("Sinogram range", value=sino_range, min=0, max=2160, thumb_label="always")
+            with solara.Row():
+                solara.SliderRangeInt(label="Projections range", value=proj_range, min=0, max=n_proj.value, disabled=not(proj_range_enable.value))
+                solara.Switch(label=None, value=proj_range_enable, on_value=get_n_proj())
+
             with solara.Row(): # gap="10px", justify="space-around"
                 # with solara.Column():
                 solara.Button(label="Load data", icon_name="mdi-cloud-download", on_click=lambda: load_and_normalize(h5file.value), style={"height": "40px", "width": "400px"}, disabled=not(os.path.splitext(h5file.value)[1]=='.h5'))
@@ -252,7 +260,7 @@ def Recon():
             solara.Select("Algorithm", value=algorithm, values=algorithms)
             solara.Button(label="Reconstruct", icon_name="mdi-car-turbocharger", on_click=lambda: reconstruct_dataset(), disabled=not(loaded_file.value))
             solara.ProgressLinear(recon_status.value)
-            solara.Button(label="Inspect with Napari", icon_name="mdi-eye", on_click=lambda: load_and_normalize(h5file), disabled=not(reconstructed.value))
+            solara.Button(label="Inspect with Napari", icon_name="mdi-eye", on_click=lambda: view_recon_with_napari(), disabled=not(reconstructed.value))
             solara.Button(label="Write to disk", icon_name="mdi-content-save-all-outline", on_click=lambda: write_recon(), disabled=not(reconstructed.value))
 
 @solara.component
@@ -293,10 +301,31 @@ def Page():
         # solara.Markdown("This is the home page")
         FileSelect()
         FileLoad()
-        DatasetInfo()
+        # DatasetInfo()
+
+    with solara.Card():
+        solara.Title("CT reconstruction")  # "Find the Center Of Rotation (COR)"
+        with solara.Card("Center Of Rotation (COR)", style={"max-width": "800px"}, margin=0, classes=["my-2"]):
+            with solara.Column():
+                CORdisplay()
+                CORinspect()
+        Recon()
+
+        solara.Success(f"This al-recon instance reconstructed {recon_counter.value} datasets.", text=True, dense=True, outlined=True, icon=True)
 
 @solara.component
 def Layout(children):
     return solara.AppLayout(children=children)
 
+@solara.component
+def PageSettings():
+
+    solara.Title("Settings")
+    with solara.Card("Settings", subtitle="Ask before making changes"):
+        OutputSettings()
+        with solara.Row():
+            DefaultSettings()
+            ReconSettings()
+
 Page()
+PageSettings()
