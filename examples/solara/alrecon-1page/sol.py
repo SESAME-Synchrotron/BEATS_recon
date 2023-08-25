@@ -43,6 +43,8 @@ proj_range = solara.reactive((0,4001))
 n_proj = solara.reactive(1001)
 proj_range_enable = solara.reactive(False)
 averaging = solara.reactive("mean") # "median"
+hist_speeds = [1, 5, 10, 20]
+hist_speed = solara.reactive(10)
 
 def generate_title():
     titles = ["Al-Recon. CT reconstruction for dummies",
@@ -154,17 +156,17 @@ def write_recon():
 
 @solara.component
 def CORdisplay():
-    with solara.Card("", style={"max-width": "800px"}, margin=0, classes=["my-2"]):
-        with solara.Row(gap="10px", justify="space-around"):
+    with solara.Card("", margin=0, classes=["my-2"], style={"width": "200px"}):
+        with solara.Column():   # gap="10px", justify="space-around"
             solara.Button(label="Guess COR", icon_name="mdi-play", on_click=lambda: guess_COR(), disabled=not(loaded_file.value))
             solara.InputFloat("COR guess", value=COR_guess, continuous_update=False)
             # solara.InputText("COR", value=COR, continuous_update=continuous_update.value)
             SetCOR()
-        solara.ProgressLinear(cor_status.value)
+            solara.ProgressLinear(cor_status.value)
 
 @solara.component
 def CORinspect():
-    with solara.Card(subtitle="COR manual inspection", style={"max-width": "800px"}, margin=0, classes=["my-2"]):
+    with solara.Card(subtitle="COR manual inspection", margin=0, classes=["my-2"], style={"min-width": "900px"}):
         with solara.Column(): # style={"width": "450px"}
             with solara.Row():
                 solara.Markdown(f"Min: {COR_range.value[0]}")
@@ -174,9 +176,9 @@ def CORinspect():
                 solara.SliderInt("COR slice", value=COR_slice_ind, step=5, min=sino_range.value[0], max=sino_range.value[1], thumb_label="always")
                 solara.SliderValue("COR step", value=COR_step, values=COR_steps)
 
+            solara.ProgressLinear(cor_status.value)
             solara.Button(label="Write images with COR range", icon_name="mdi-play", on_click=lambda: write_cor(),
                           disabled=not (loaded_file.value))
-            solara.ProgressLinear(cor_status.value)
             solara.Button(label="inspect COR range images", icon_name="mdi-eye",
                           on_click=lambda: view_cor_with_ImageJ())
 
@@ -212,15 +214,14 @@ def FileSelect():
 
 @solara.component
 def FileLoad():
-
     with solara.Card("", margin=0, classes=["my-2"]): # style={"max-width": "800px"},
         global h5file
 
         with solara.Column():
             solara.SliderRangeInt("Sinogram range", value=sino_range, min=0, max=2160, thumb_label="always")
             with solara.Row():
-                solara.SliderRangeInt(label="Projections range", value=proj_range, min=0, max=n_proj.value, disabled=not(proj_range_enable.value))
                 solara.Switch(label=None, value=proj_range_enable, on_value=get_n_proj())
+                solara.SliderRangeInt(label="Projections range", value=proj_range, min=0, max=n_proj.value, disabled=not(proj_range_enable.value))
 
             with solara.Row(): # gap="10px", justify="space-around"
                 # with solara.Column():
@@ -255,13 +256,25 @@ def DatasetInfo():
 
 @solara.component
 def Recon():
-    with solara.Card("CT reconstruction", style={"max-width": "800px"}, margin=0, classes=["my-2"]):
+    with solara.Card("Launch recon", style={"max-width": "800px"}, margin=0, classes=["my-2"]):
         with solara.Column():
             solara.Select("Algorithm", value=algorithm, values=algorithms)
             solara.Button(label="Reconstruct", icon_name="mdi-car-turbocharger", on_click=lambda: reconstruct_dataset(), disabled=not(loaded_file.value))
             solara.ProgressLinear(recon_status.value)
             solara.Button(label="Inspect with Napari", icon_name="mdi-eye", on_click=lambda: view_recon_with_napari(), disabled=not(reconstructed.value))
             solara.Button(label="Write to disk", icon_name="mdi-content-save-all-outline", on_click=lambda: write_recon(), disabled=not(reconstructed.value))
+
+@solara.component
+def OutputControls():
+    with solara.Card("Output TIFF settings", margin=0, classes=["my-2"], style={"min-width": "600px"}):
+        # solara.Markdown("blabla")
+        with solara.Row():
+            solara.Button(label="Display histogram", icon_name="mdi-play", on_click=lambda: reconstruct_dataset(), disabled=not(reconstructed.value))
+            solara.SliderValue("Histogram speed", value=hist_speed, values=hist_speeds)
+        with solara.Row():
+            # solara.Switch(label="Uint convert")
+            solara.SliderValue("Histogram speed", value=hist_speed, values=hist_speeds)
+
 
 @solara.component
 def OutputSettings(disabled=False, style=None):
@@ -303,13 +316,17 @@ def Page():
         FileLoad()
         # DatasetInfo()
 
-    with solara.Card():
-        solara.Title("CT reconstruction")  # "Find the Center Of Rotation (COR)"
-        with solara.Card("Center Of Rotation (COR)", style={"max-width": "800px"}, margin=0, classes=["my-2"]):
-            with solara.Column():
-                CORdisplay()
-                CORinspect()
-        Recon()
+    with solara.Card("Find the Center Of Rotation (COR)", margin=0, classes=["my-2"]): # style={"max-width": "800px"},
+        # solara.Title("CT reconstruction")  # "Find the Center Of Rotation (COR)"
+        # with solara.Card("Center Of Rotation (COR)", style={"max-width": "800px"}, margin=0, classes=["my-2"]):
+        with solara.Row():
+            CORdisplay()
+            CORinspect()
+
+    with solara.Card("CT reconstruction", margin=0, classes=["my-2"]):
+        with solara.Row():
+            Recon()
+            OutputControls()
 
         solara.Success(f"This al-recon instance reconstructed {recon_counter.value} datasets.", text=True, dense=True, outlined=True, icon=True)
 
