@@ -44,7 +44,10 @@ n_proj = solara.reactive(1001)
 proj_range_enable = solara.reactive(False)
 averaging = solara.reactive("mean") # "median"
 hist_speeds = [1, 5, 10, 20]
-hist_speed = solara.reactive(10)
+hist_speed = solara.reactive(20)
+bitdepths = [8, 16]
+bitdepth = solara.reactive(8)
+uintconvert = solara.reactive(False)
 
 def generate_title():
     titles = ["Al-Recon. CT reconstruction for dummies",
@@ -73,7 +76,6 @@ def get_n_proj():
         n_proj.set(int(dxchange.read_hdf5(h5file.value, '/measurement/instrument/camera/dimension_y')[0]))
     except:
         print("Cannot read n. of projections")
-
 
 def load_and_normalize(filename):
     global projs
@@ -147,6 +149,16 @@ def reconstruct_dataset():
     recon_status.set(False)
     reconstructed.set(True)
     recon_counter.set(recon_counter.value + 1)
+
+def plot_recon_hist():
+    recon_subset = recon[0::hist_speed.value, 0::hist_speed.value, 0::hist_speed.value]
+    # plt.hist(recon_subset.ravel(), bins=100)
+    # plt.show()
+    # Estimate GV range from data histogram (0.01 and 0.99 quantiles)
+    [range_min, q_95] = np.quantile(recon_subset.ravel(), [0.01, 0.99])
+    range_max = q_95 - range_min
+    print("1% quantile: ", range_min)
+    print("99% quantile: ", range_max)
 
 def write_recon():
     fileout = recon_dir.value + '/slice.tiff'
@@ -266,14 +278,18 @@ def Recon():
 
 @solara.component
 def OutputControls():
-    with solara.Card("Output TIFF settings", margin=0, classes=["my-2"], style={"min-width": "600px"}):
+    with solara.Card("Output file settings", margin=0, classes=["my-2"], style={"min-width": "600px"}):
         # solara.Markdown("blabla")
         with solara.Row():
-            solara.Button(label="Display histogram", icon_name="mdi-play", on_click=lambda: reconstruct_dataset(), disabled=not(reconstructed.value))
-            solara.SliderValue("Histogram speed", value=hist_speed, values=hist_speeds)
-        with solara.Row():
-            # solara.Switch(label="Uint convert")
-            solara.SliderValue("Histogram speed", value=hist_speed, values=hist_speeds)
+            with solara.Card(margin=0):
+                with solara.Column():
+                    solara.Button(label="Plot recon histogram", icon_name="mdi-plot", on_click=lambda: plot_recon_hist(), disabled=not(reconstructed.value))
+                    solara.SliderValue("Histogram speed", value=hist_speed, values=hist_speeds)
+            with solara.Card(margin=0):
+                with solara.Column():
+                    # solara.Switch(label="Uint convert")
+                    solara.Switch(label="Integer conversion", value=uintconvert, style={"height": "20px"})
+                    solara.SliderValue("Bits", value=bitdepth, values=bitdepths, disabled=not(uintconvert.value)) # thumb_label="always"
 
 
 @solara.component
