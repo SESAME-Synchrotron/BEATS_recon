@@ -6,6 +6,9 @@ import tomopy
 import os
 import random
 import napari
+import plotly.express as px
+import solara.express as spx
+# from matplotlib.figure import Figure
 
 # path to ImageJ executable
 Fiij_exe = solara.reactive('/opt/fiji-linux64/Fiji.app/ImageJ-linux64')
@@ -30,6 +33,9 @@ COR_algorithms = ["Vo", "TomoPy"]
 COR_algorithm = solara.reactive("TomoPy") # "Vo"
 h5dir = "~/Data/" # remove??
 projs = np.zeros([0,0,0])
+projs_shape = solara.reactive([0,0,0])
+flats_shape = solara.reactive([0,0,0])
+darks_shape = solara.reactive([0,0,0])
 recon = np.zeros([0,0,0])
 theta = np.zeros(0)
 loaded_file = solara.reactive(False)
@@ -37,17 +43,117 @@ load_status = solara.reactive(False)
 cor_status = solara.reactive(False)
 reconstructed = solara.reactive(False)
 recon_status = solara.reactive(False)
+phase_object = solara.reactive(False)
+phase_retrieved = solara.reactive(False)
 recon_counter = solara.reactive(0)
 sino_range = solara.reactive((980, 1020))
 proj_range = solara.reactive((0,4001))
 n_proj = solara.reactive(1001)
 proj_range_enable = solara.reactive(False)
 averaging = solara.reactive("mean") # "median"
-hist_speeds = [1, 5, 10, 20]
-hist_speed = solara.reactive(20)
-bitdepths = [8, 16]
-bitdepth = solara.reactive(8)
+hist_speeds_string = ["slow", "medium", "fast", "very fast"]
+hist_steps = [1, 5, 10, 20]
+hist_speed = solara.reactive("fast")
+bitdepths = ["uint8", "uint16"]
+bitdepth = solara.reactive("uint16")
 uintconvert = solara.reactive(False)
+plotreconhist = solara.reactive(False)
+Data_min = solara.reactive(0)
+Data_max = solara.reactive(0)
+circmask = solara.reactive(False)
+circ_mask_ratio = solara.reactive(0.9)
+
+def touint(data_3D, dtype='uint8', range=None, quantiles=None, numexpr=True, subset=True):
+    """Normalize and convert data to unsigned integer.
+
+    Parameters
+    ----------
+    data_3D
+        Input data.
+    dtype
+        Output data type ('uint8' or 'uint16').
+    range : [float, float]
+        Control range for data normalization.
+    quantiles : [float, float]
+        Define range for data normalization through input data quantiles. If range is given this input is ignored.
+    numexpr : bool
+        Use fast numerical expression evaluator for NumPy (memory expensive).
+    subset : bool
+        Use subset of the input data for quantile calculation.
+
+    Returns
+    -------
+    output : uint
+        Normalized data.
+    """
+
+    def convertfloat():
+        return data_3D.astype(np.float32, copy=False), np.float32(data_max - data_min), np.float32(data_min)
+
+    def convertint():
+        if dtype == 'uint8':
+            return convert8bit()
+        elif dtype == 'uint16':
+            return convert16bit()
+
+    def convert16bit():
+
+        data_3D_float, df, mn = convertfloat()
+
+        if numexpr:
+            import numexpr as ne
+
+            scl = ne.evaluate('0.5+65535*(data_3D_float-mn)/df', truediv=True)
+            ne.evaluate('where(scl<0,0,scl)', out=scl)
+            ne.evaluate('where(scl>65535,65535,scl)', out=scl)
+            return scl.astype(np.uint16)
+        else:
+            data_3D_float = 0.5 + 65535 * (data_3D_float - mn) / df
+            data_3D_float[data_3D_float < 0] = 0
+            data_3D_float[data_3D_float > 65535] = 65535
+            return np.uint16(data_3D_float)
+
+    def convert8bit():
+
+        data_3D_float, df, mn = convertfloat()
+
+        if numexpr:
+            import numexpr as ne
+
+            scl = ne.evaluate('0.5+255*(data_3D_float-mn)/df', truediv=True)
+            ne.evaluate('where(scl<0,0,scl)', out=scl)
+            ne.evaluate('where(scl>255,255,scl)', out=scl)
+            return scl.astype(np.uint8)
+        else:
+            data_3D_float = 0.5 + 255 * (data_3D_float - mn) / df
+            data_3D_float[data_3D_float < 0] = 0
+            data_3D_float[data_3D_float > 255] = 255
+            return np.uint8(data_3D_float)
+
+    if range == None:
+
+        # if quantiles is empty data is scaled based on its min and max values
+        if quantiles == None:
+            data_min = np.nanmin(data_3D)
+            data_max = np.nanmax(data_3D)
+            data_max = data_max - data_min
+            return convertint()
+        else:
+            if subset:
+                [data_min, data_max] = np.quantile(np.ravel(data_3D[0::10, 0::10, 0::10]), quantiles)
+            else:
+                [data_min, data_max] = np.quantile(np.ravel(data_3D), quantiles)
+
+            return convertint()
+
+    else:
+        # ignore quantiles input if given
+        if quantiles is not None:
+            print('quantiles input ignored.')
+
+        data_min = range[0]
+        data_max = range[1]
+        return convertint()
 
 def generate_title():
     titles = ["Al-Recon. CT reconstruction for dummies",
@@ -92,6 +198,10 @@ def load_and_normalize(filename):
         projs, flats, darks, theta = dxchange.read_aps_32id(filename, exchange_rank=0, sino=(sino_range.value[0], sino_range.value[1], 1))
     loaded_file.set(True)
 
+    projs_shape.set(projs.shape)
+    flats_shape.set(flats.shape)
+    darks_shape.set(darks.shape)
+
     print("Dataset size: ", projs[:, :, :].shape[:], " - dtype: ", projs.dtype)
     print("Flat fields size: ", flats[:, :, :].shape[:])
     print("Dark fields size: ", darks[:, :, :].shape[:])
@@ -101,8 +211,8 @@ def load_and_normalize(filename):
         projs = tomopy.normalize(projs, flats, darks, ncore=ncore.value, averaging=averaging.value)
         print("Sinogram: normalized.")
 
-        projs = tomopy.minus_log(projs, ncore=ncore.value)
-        print("Sinogram: - log transformed.")
+        # projs = tomopy.minus_log(projs, ncore=ncore.value)
+        # print("Sinogram: - log transformed.")
 
     load_status.set(False)
     COR_slice_ind.set(int(np.mean(sino_range.value)))
@@ -139,32 +249,59 @@ def reconstruct_dataset():
     global theta
     global recon
     recon_status.set(True)
-    recon = tomopy.recon(projs,
-                         theta,
-                         center=COR.value,
-                         algorithm=algorithm.value,
-                         sinogram_order=False,
-                         ncore=ncore.value)
-    print("Dataset reconstructed.")
+    if phase_retrieved.value:
+        recon = tomopy.recon(projs,
+                             theta,
+                             center=COR.value,
+                             algorithm=algorithm.value,
+                             sinogram_order=False,
+                             ncore=ncore.value)
+        print("Phase dataset reconstructed.")
+    else:
+        recon = tomopy.recon(tomopy.minus_log(projs, ncore=ncore.value),
+                             theta,
+                             center=COR.value,
+                             algorithm=algorithm.value,
+                             sinogram_order=False,
+                             ncore=ncore.value)
+        if phase_object.value:
+            solara.Error("Phase info not retrieved! I will reconstruct an absorption dataset.", text=False, dense=True, outlined=False)
+        print("Dataset reconstructed.")
     recon_status.set(False)
     reconstructed.set(True)
     recon_counter.set(recon_counter.value + 1)
 
-def plot_recon_hist():
-    recon_subset = recon[0::hist_speed.value, 0::hist_speed.value, 0::hist_speed.value]
-    # plt.hist(recon_subset.ravel(), bins=100)
-    # plt.show()
-    # Estimate GV range from data histogram (0.01 and 0.99 quantiles)
-    [range_min, q_95] = np.quantile(recon_subset.ravel(), [0.01, 0.99])
-    range_max = q_95 - range_min
-    print("1% quantile: ", range_min)
-    print("99% quantile: ", range_max)
+    if (Data_min.value == 0) & (Data_max.value == 0):
+        recon_subset = recon[0::10, 0::10, 0::10]
+
+        # Estimate GV range from data histogram (0.01 and 0.99 quantiles)
+        [range_min, range_max] = np.quantile(recon_subset.ravel(), [0.01, 0.99])
+        print("1% quantile: ", range_min)
+        print("99% quantile: ", range_max)
+        Data_min.set(round(range_min, 5))
+        Data_max.set(round(range_max, 5))
 
 def write_recon():
     fileout = recon_dir.value + '/slice.tiff'
     recon_status.set(True)
-    dxchange.writer.write_tiff_stack(recon, fname=fileout, axis=0, digit=4, start=0, overwrite=True)
+
+    # apply circular mask
+    # recon = tomopy.circ_mask(recon, axis=0, ratio=args.circ_mask_ratio, val=args.circ_mask_val)
+
+    if uintconvert.value:
+        if circmask.value:
+            dxchange.writer.write_tiff_stack(tomopy.circ_mask(touint(recon, bitdepth.value, [Data_min.value, Data_max.value]), axis=0, ratio=circ_mask_ratio.value),
+                                             fname=fileout, dtype=bitdepth.value, axis=0, digit=4, start=0, overwrite=True)
+        else:
+            dxchange.writer.write_tiff_stack(touint(recon, bitdepth.value, [Data_min.value, Data_max.value]),
+                                             fname=fileout, dtype=bitdepth.value, axis=0, digit=4, start=0, overwrite=True)
+    else:
+        if circmask.value:
+            dxchange.writer.write_tiff_stack(tomopy.circ_mask(recon, axis=0, ratio=circ_mask_ratio.value), fname=fileout, axis=0, digit=4, start=0, overwrite=True)
+        else:
+            dxchange.writer.write_tiff_stack(recon, fname=fileout, axis=0, digit=4, start=0, overwrite=True)
     recon_status.set(False)
+    print("Dataset written to disk.")
 
 @solara.component
 def CORdisplay():
@@ -233,7 +370,7 @@ def FileLoad():
             solara.SliderRangeInt("Sinogram range", value=sino_range, min=0, max=2160, thumb_label="always")
             with solara.Row():
                 solara.Switch(label=None, value=proj_range_enable, on_value=get_n_proj())
-                solara.SliderRangeInt(label="Projections range", value=proj_range, min=0, max=n_proj.value, disabled=not(proj_range_enable.value))
+                solara.SliderRangeInt(label="Projections range", value=proj_range, min=0, max=n_proj.value, disabled=not(proj_range_enable.value), thumb_label='always')
 
             with solara.Row(): # gap="10px", justify="space-around"
                 # with solara.Column():
@@ -249,13 +386,13 @@ def DispH5FILE():
     # solara.Markdown(f"**File name**: {h5file.value}")
     return solara.Markdown(f'''
             ## Dataset information
-            * File name: <mark>`{Path(h5file.value).stem}`</mark>
-            * Proj size: {projs[:, :, :].shape[:]}
-            * Sinogram range: `{sino_range.value}`
+            * File name: {Path(h5file.value).stem}
+            * Sinogram range: `{sino_range.value[0]} - {sino_range.value[1]}`
+            * Projections range: `{proj_range.value[0]} - {proj_range.value[1]}`
+            * Sinogram size: {projs_shape.value[0]} x {projs_shape.value[1]} x {projs_shape.value[2]}
             ''')
-    # solara.Markdown(f"* Sinogram range: `{sino_range.value}`")
-    # solara.Markdown(f"* Recon dir: {recon_dir.value}")
-    # solara.Markdown(f"COR dir: {cor_dir.value}")
+    # * Flat data size: {flats_shape.value[0]} x {flats_shape.value[1]} x {flats_shape.value[2]}
+    # * Dark data size: {darks_shape.value[0]} x {darks_shape.value[1]} x {darks_shape.value[2]}
 
 @solara.component
 def DatasetInfo():
@@ -278,19 +415,23 @@ def Recon():
 
 @solara.component
 def OutputControls():
-    with solara.Card("Output file settings", margin=0, classes=["my-2"], style={"min-width": "600px"}):
+    with solara.Card("Output file settings", margin=0, classes=["my-2"], style={"max-width": "400px"}):
         # solara.Markdown("blabla")
-        with solara.Row():
-            with solara.Card(margin=0):
-                with solara.Column():
-                    solara.Button(label="Plot recon histogram", icon_name="mdi-plot", on_click=lambda: plot_recon_hist(), disabled=not(reconstructed.value))
-                    solara.SliderValue("Histogram speed", value=hist_speed, values=hist_speeds)
-            with solara.Card(margin=0):
-                with solara.Column():
-                    # solara.Switch(label="Uint convert")
-                    solara.Switch(label="Integer conversion", value=uintconvert, style={"height": "20px"})
-                    solara.SliderValue("Bits", value=bitdepth, values=bitdepths, disabled=not(uintconvert.value)) # thumb_label="always"
+        with solara.Column():
+            with solara.Card(subtitle="Integer conversion", margin=0):
+                with solara.Row():
+                    solara.Switch(value=uintconvert, style={"height": "20px", "vertical-align": "bottom"})
+                    solara.SliderValue("", value=bitdepth, values=bitdepths, disabled=not(uintconvert.value)) # thumb_label="always"
 
+            with solara.Card(subtitle="Data range", margin=0):
+                with solara.Row():
+                    solara.InputFloat("Min:", value=Data_min, continuous_update=False, disabled=not(uintconvert.value))
+                    solara.InputFloat("Max:", value=Data_max, continuous_update=False, disabled=not(uintconvert.value))
+
+            with solara.Card(subtitle="Apply circular mask", margin=0):
+                with solara.Row():
+                    solara.Switch(value=circmask, style={"height": "10px", "vertical-align": "top"})
+                    solara.SliderFloat("Diameter ratio", value=circ_mask_ratio, min=0.5, max=1.0, step=0.01, thumb_label='always', disabled=not(circmask.value))
 
 @solara.component
 def OutputSettings(disabled=False, style=None):
@@ -314,6 +455,34 @@ def ReconSettings():
         solara.Select("Algorithm", value=algorithm, values=algorithms)
 
 @solara.component
+def ReconHistogram():
+    with solara.Card("Recon histogram", style={"width": "800px", "height": "500px", "margin": "0px"}):
+        with solara.Row(style={"max-width": "500px", "margin": "0px"}):
+            # with solara.Card(style={"max-width": "200px", "margin": "0px"}):
+            solara.Switch(label="Plot histogram", value=plotreconhist)
+            solara.SliderValue(label="", value=hist_speed, values=hist_speeds_string, disabled=not(plotreconhist.value))
+        with solara.Column(style={"margin": "0px"}):
+            if plotreconhist.value:
+                step = hist_steps[hist_speeds_string.index(hist_speed.value)]
+                fig = px.histogram(recon[0::step, 0::step, 0::step].ravel())
+                fig.update_layout(showlegend=False)
+                fig.add_vrect(x0=Data_min.value,
+                              x1=Data_max.value,
+                              annotation_text=("            Min: " + str(Data_min.value) + "<br>             Max: " + str(Data_max.value)),
+                              annotation_position="top left",
+                              fillcolor="pink",
+                              opacity=0.25,
+                              line_width=0)
+                spx.CrossFilteredFigurePlotly(fig)
+
+        # with solara.Column():
+        #     solara.Markdown("This is the sidebar at the home page!")
+        #     fig = Figure()
+        #     ax = fig.subplots()
+        #     ax.plot([1, 2, 3], [1, 4, 9])
+        #     return solara.FigureMatplotlib(fig)
+
+@solara.component
 def Page():
     with solara.Sidebar():
         with solara.Card(margin=0, elevation=0):
@@ -325,7 +494,7 @@ def Page():
             # DatasetInfo()
             # solara.Markdown("This is the sidebar at the home page!")
 
-    with solara.Card("Load dataset"):
+    with solara.Card("Load dataset", margin=0, classes=["my-2"]):
         solara.Title(generate_title())
         # solara.Markdown("This is the home page")
         FileSelect()
@@ -343,6 +512,7 @@ def Page():
         with solara.Row():
             Recon()
             OutputControls()
+            ReconHistogram()
 
         solara.Success(f"This al-recon instance reconstructed {recon_counter.value} datasets.", text=True, dense=True, outlined=True, icon=True)
 
