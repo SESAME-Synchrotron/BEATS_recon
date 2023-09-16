@@ -4,6 +4,7 @@ import numpy as np
 import dxchange
 import tomopy
 import os
+from time import time
 import random
 import napari
 import plotly.express as px
@@ -33,6 +34,7 @@ COR_algorithms = ["Vo", "TomoPy"]
 COR_algorithm = solara.reactive("TomoPy") # "Vo"
 h5dir = "~/Data/" # remove??
 projs = np.zeros([0,0,0])
+projs_phase = np.zeros([0,0,0])
 projs_shape = solara.reactive([0,0,0])
 flats_shape = solara.reactive([0,0,0])
 darks_shape = solara.reactive([0,0,0])
@@ -44,6 +46,7 @@ cor_status = solara.reactive(False)
 reconstructed = solara.reactive(False)
 recon_status = solara.reactive(False)
 phase_object = solara.reactive(False)
+retrieval_status = solara.reactive(False)
 phase_retrieved = solara.reactive(False)
 recon_counter = solara.reactive(0)
 sino_range = solara.reactive((980, 1020))
@@ -51,6 +54,10 @@ proj_range = solara.reactive((0,4001))
 n_proj = solara.reactive(1001)
 proj_range_enable = solara.reactive(False)
 averaging = solara.reactive("mean") # "median"
+pixelsize = solara.reactive(6.5)
+energy = solara.reactive(20.0)
+sdd = solara.reactive(20.0)
+alpha = solara.reactive(0.002)
 hist_speeds_string = ["slow", "medium", "fast", "very fast"]
 hist_steps = [1, 5, 10, 20]
 hist_speed = solara.reactive("fast")
@@ -62,6 +69,18 @@ Data_min = solara.reactive(0)
 Data_max = solara.reactive(0)
 circmask = solara.reactive(False)
 circ_mask_ratio = solara.reactive(0.9)
+
+def sinogram():
+    global projs
+    global projs_phase
+
+    if phase_object.value:
+        if phase_retrieved.value:
+            return projs_phase
+        else:
+            return tomopy.minus_log(projs, ncore=ncore.value)
+    else:
+        return tomopy.minus_log(projs, ncore=ncore.value)
 
 def touint(data_3D, dtype='uint8', range=None, quantiles=None, numexpr=True, subset=True):
     """Normalize and convert data to unsigned integer.
@@ -244,29 +263,27 @@ def write_cor():
     print("Reconstructed slice with COR range: ", ([COR_range.value[0], COR_range.value[1], COR_step.value]))
     cor_status.set(False)
 
-def reconstruct_dataset():
+def retrieve_phase():
     global projs
+    global projs_phase
+    retrieval_status.set(True)
+    phase_start_time = time()
+    projs_phase = tomopy.retrieve_phase(projs, pixel_size=0.0001 * pixelsize.value, dist=0.1 * sdd.value, energy=energy.value, alpha=alpha.value, pad=True, ncore=ncore.value, nchunk=None)
+    phase_end_time = time()
+    phase_time = phase_end_time - phase_start_time
+    print("Phase retrieval time: {} s\n".format(str(phase_time)))
+    retrieval_status.set(False)
+    phase_retrieved.set(True)
+
+def reconstruct_dataset():
     global theta
     global recon
     recon_status.set(True)
-    if phase_retrieved.value:
-        recon = tomopy.recon(projs,
-                             theta,
-                             center=COR.value,
-                             algorithm=algorithm.value,
-                             sinogram_order=False,
-                             ncore=ncore.value)
-        print("Phase dataset reconstructed.")
-    else:
-        recon = tomopy.recon(tomopy.minus_log(projs, ncore=ncore.value),
-                             theta,
-                             center=COR.value,
-                             algorithm=algorithm.value,
-                             sinogram_order=False,
-                             ncore=ncore.value)
-        if phase_object.value:
+    recon = tomopy.recon(sinogram(), theta, center=COR.value, algorithm=algorithm.value, sinogram_order=False, ncore=ncore.value)
+    if phase_object.value:
+        if not phase_retrieved.value:
             solara.Error("Phase info not retrieved! I will reconstruct an absorption dataset.", text=False, dense=True, outlined=False)
-        print("Dataset reconstructed.")
+    print("Dataset reconstructed.")
     recon_status.set(False)
     reconstructed.set(True)
     recon_counter.set(recon_counter.value + 1)
@@ -369,7 +386,7 @@ def FileLoad():
         with solara.Column():
             solara.SliderRangeInt("Sinogram range", value=sino_range, min=0, max=2160, thumb_label="always")
             with solara.Row():
-                solara.Switch(label=None, value=proj_range_enable, on_value=get_n_proj())
+                solara.Switch(label=None, value=proj_range_enable) # on_value=get_n_proj()
                 solara.SliderRangeInt(label="Projections range", value=proj_range, min=0, max=n_proj.value, disabled=not(proj_range_enable.value), thumb_label='always')
 
             with solara.Row(): # gap="10px", justify="space-around"
@@ -402,6 +419,24 @@ def DatasetInfo():
         solara.Markdown("### Dataset information")
         solara.Info(f"File name: {Path(h5file.value).stem}", dense=True)
         solara.Info(f"Proj size: {projs[:, :, :].shape[:]}", dense=True)
+
+@solara.component
+def PhaseRetrieval():
+    with solara.Card("", margin=0, classes=["my-2"]): # "Phase retrieval", subtitle="Paganin method",
+        with solara.Column():
+            with solara.Column(style={"margin": "0px"}):
+                solara.Switch(label="Phase retrieval", value=phase_object, style={"height": "20px", "vertical-align": "top"})
+                solara.Button(label="Retrieve phase", icon_name="mdi-play", on_click=lambda: retrieve_phase(), disabled=not (phase_object.value))
+                solara.ProgressLinear(retrieval_status.value)
+
+            with solara.Card(subtitle="Phase retrieval parameters", margin=0, classes=["my-2"]):
+                with solara.Column():
+                    solara.InputFloat("Pixel size [\u03BCm]", value=pixelsize, continuous_update=False, disabled=not (phase_object.value))
+                    solara.InputFloat("Sample-detector distance [mm]", value=sdd, continuous_update=False, disabled=not (phase_object.value))
+                    solara.InputFloat("Energy [keV]", value=energy, continuous_update=False, disabled=not (phase_object.value))
+                    solara.InputFloat("\u03B1 = 1 / (4 \u03C0\u00b2 \u03B4 / \u03B2)", value=alpha, continuous_update=False, disabled=not (phase_object.value))
+
+                    # solara.Select("I stretch twice the amount", values=["a", "b", "c"], value="a")
 
 @solara.component
 def Recon():
@@ -456,7 +491,7 @@ def ReconSettings():
 
 @solara.component
 def ReconHistogram():
-    with solara.Card("Recon histogram", style={"width": "800px", "height": "500px", "margin": "0px"}):
+    with solara.Card("Recon histogram", style={"margin": "0px"}): # "width": "800px",
         with solara.Row(style={"max-width": "500px", "margin": "0px"}):
             # with solara.Card(style={"max-width": "200px", "margin": "0px"}):
             solara.Switch(label="Plot histogram", value=plotreconhist)
@@ -464,8 +499,8 @@ def ReconHistogram():
         with solara.Column(style={"margin": "0px"}):
             if plotreconhist.value:
                 step = hist_steps[hist_speeds_string.index(hist_speed.value)]
-                fig = px.histogram(recon[0::step, 0::step, 0::step].ravel())
-                fig.update_layout(showlegend=False)
+                fig = px.histogram(recon[0::step, 0::step, 0::step].ravel(), height=300)
+                fig.update_layout(showlegend=False, margin=dict(l=10, r=10, t=10, b=10))
                 fig.add_vrect(x0=Data_min.value,
                               x1=Data_max.value,
                               annotation_text=("            Min: " + str(Data_min.value) + "<br>             Max: " + str(Data_max.value)),
@@ -501,15 +536,17 @@ def Page():
         FileLoad()
         # DatasetInfo()
 
-    with solara.Card("Find the Center Of Rotation (COR)", margin=0, classes=["my-2"]): # style={"max-width": "800px"},
-        # solara.Title("CT reconstruction")  # "Find the Center Of Rotation (COR)"
-        # with solara.Card("Center Of Rotation (COR)", style={"max-width": "800px"}, margin=0, classes=["my-2"]):
-        with solara.Row():
-            CORdisplay()
-            CORinspect()
+    with solara.Columns([0.2, 1], gutters_dense=True):
+        PhaseRetrieval()
+        with solara.Card("Find the Center Of Rotation (COR)", margin=0, classes=["my-2"]): # style={"max-width": "800px"},
+            # solara.Title("CT reconstruction")  # "Find the Center Of Rotation (COR)"
+            with solara.Columns([0,1], gutters_dense=True):
+                CORdisplay()
+                CORinspect()
+
 
     with solara.Card("CT reconstruction", margin=0, classes=["my-2"]):
-        with solara.Row():
+        with solara.Columns([0,1,2], gutters_dense=True):
             Recon()
             OutputControls()
             ReconHistogram()
