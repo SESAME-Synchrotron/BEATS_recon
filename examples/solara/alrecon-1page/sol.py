@@ -32,7 +32,8 @@ COR = solara.reactive(1280)
 COR_guess = solara.reactive(1280)
 COR_algorithms = ["Vo", "TomoPy"]
 COR_algorithm = solara.reactive("TomoPy") # "Vo"
-h5dir = "~/Data/" # remove??
+# h5dir = "~/Data/" # remove??
+h5dir = "/mnt/PETRA/SED/BEATS/IH/"
 projs = np.zeros([0,0,0])
 projs_phase = np.zeros([0,0,0])
 projs_shape = solara.reactive([0,0,0])
@@ -202,12 +203,27 @@ def get_n_proj():
     except:
         print("Cannot read n. of projections")
 
+def get_phase_params():
+    try:
+        sdd.set(dxchange.read_hdf5(h5file.value, '/measurement/instrument/detector_motor_stack/detector_z')[0])
+    except:
+        print("Cannot read detector_z value")
+
+    try:
+        energy.set(dxchange.read_hdf5(h5file.value, '/measurement/instrument/monochromator/energy')[0])
+    except:
+        print("Cannot read monochromator energy")
+
+    try:
+        camera_pixel_size = dxchange.read_hdf5(h5file.value, '/measurement/instrument/camera/pixel_size')[0]
+        magnification = dxchange.read_hdf5(h5file.value, '/measurement/instrument/detection_system/objective/magnification')[0]
+        pixelsize.set(camera_pixel_size / magnification)
+    except:
+        print("Cannot read detector information (camera pixel_size; magnification")
+
 def load_and_normalize(filename):
     global projs
-    # global flats
-    # global darks
     global theta
-    # global loaded_file
     load_status.set(True)
 
     if proj_range_enable.value:
@@ -230,11 +246,10 @@ def load_and_normalize(filename):
         projs = tomopy.normalize(projs, flats, darks, ncore=ncore.value, averaging=averaging.value)
         print("Sinogram: normalized.")
 
-        # projs = tomopy.minus_log(projs, ncore=ncore.value)
-        # print("Sinogram: - log transformed.")
-
     load_status.set(False)
     COR_slice_ind.set(int(np.mean(sino_range.value)))
+
+    get_phase_params()
 
     if COR_auto.value:
         guess_COR()
@@ -376,7 +391,7 @@ def FileSelect():
         # h5file, set_file = solara.use_state(cast(Optional[Path], None))
         h5dir, set_directory = solara.use_state(Path(h5dir).expanduser())
 
-        solara.FileBrowser(can_select=False, directory=h5dir, on_directory_change=set_directory, on_file_open=h5file.set)
+        solara.FileBrowser(can_select=False, directory=h5dir, on_directory_change=set_directory, on_file_open=h5file.set, directory_first=True)
 
 @solara.component
 def FileLoad():
