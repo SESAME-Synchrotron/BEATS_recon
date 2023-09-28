@@ -16,6 +16,7 @@ Fiij_exe = solara.reactive('/opt/fiji-linux64/Fiji.app/ImageJ-linux64')
 ImageJ_exe_stack = Fiij_exe.value + ' -macro FolderOpener_virtual.ijm '
 
 h5file = solara.reactive("")
+master_file = solara.reactive("/home/gianthk/Data/BEATS/IH/scratch/master.csv")
 recon_dir = solara.reactive("/home/gianthk/Data/BEATS/IH/scratch/pippo/recon")
 cor_dir = solara.reactive("/home/gianthk/Data/BEATS/IH/scratch/pippo/cor")
 ncore = solara.reactive(4)
