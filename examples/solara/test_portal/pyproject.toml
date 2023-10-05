@@ -3,19 +3,16 @@ requires = ["hatchling >=0.25"]
 build-backend = "hatchling.build"
 
 [project]
-name = "alrecon"
+name = "test_portal"
 license = {file = "LICENSE"}
 classifiers = ["License :: OSI Approved :: MIT License"]
 dynamic = ["version", "description"]
 dependencies = [
     "solara",
-    "plotly",
-    "dxchange",
-    "tomopy"
 ]
 
 [tool.hatch.version]
-path = "alrecon/__init__.py"
+path = "test_portal/__init__.py"
 
 
 

@@ -10,7 +10,7 @@ scopes = [
     'https://www.googleapis.com/auth/drive'
 ]
 
-creds = ServiceAccountCredentials.from_json_keyfile_name("./../keys/alrecon-f048b037c351.json", scopes=scopes)
+creds = ServiceAccountCredentials.from_json_keyfile_name("./../keys/alrecon_v1-f048b037c351.json", scopes=scopes)
 
 # access master
 file = gspread.authorize(creds)

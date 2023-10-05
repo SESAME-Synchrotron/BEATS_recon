@@ -12,7 +12,7 @@ pip install -e .
 
 - run it with
 ```commandline
-solara run alrecon.pages
+solara run alrecon.pages --host localhost
 ```
 
 ## ImageJ and Python
