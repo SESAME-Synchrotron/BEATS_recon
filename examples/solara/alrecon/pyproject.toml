@@ -9,6 +9,9 @@ classifiers = ["License :: OSI Approved :: MIT License"]
 dynamic = ["version", "description"]
 dependencies = [
     "solara",
+    "plotly",
+    "dxchange",
+    "tomopy"
 ]
 
 [tool.hatch.version]
