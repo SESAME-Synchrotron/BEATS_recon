@@ -88,6 +88,11 @@ def main():
 	parser.add_argument('--algorithm', type=str, default='gridrec',
 						help='Reconstruction algorithm. Options are: gridrec, fbp, fbp_astra, fbp_cuda_astra, sirt, sirt_cuda, sirt_cuda_astra, sart_cuda_astra, cgls_cuda_astra, mlem, art.'
 							' Visit https://tomopy.readthedocs.io/en/latest/api/tomopy.recon.algorithm.html for more info.')
+	parser.add_argument('--num_iter', type=int, default=50, help='Number of iterations for iterative reconstruction.')
+	parser.add_argument('--remove_dead_stripe', dest='remove_dead_stripe', action='store_true',
+						help='Remove unresponsive and fluctuating stripe artifacts from sinogram using Nghia Vo’s approach.')
+	parser.add_argument('--snr', type=float, default=3.0, help='Ratio used to locate of large stripes. Greater is less sensitive.')
+	parser.add_argument('--size', type=int, default=51, help='Window size of the median filter.')
 	parser.add_argument('--circ_mask', dest='circ_mask', action='store_true',
 						help='If True, apply circular mask to the Z-axis of reconstructed volume.')
 	parser.add_argument('--circ_mask_ratio', type=float, default=1.0,
@@ -151,6 +156,11 @@ def main():
 	# flat-field correction
 	logging.info("Flat-field correct.\n")
 	projs = tomopy.normalize(projs, flats, darks, ncore=args.ncore)
+
+	if args.remove_dead_stripe:
+		# Remove unresponsive and fluctuating stripe artifacts from sinogram using Nghia Vo’s approach [B23] (algorithm 6).
+		logging.info("Remove unresponsive and fluctuating stripe artifacts from sinogram using TomoPy Nghia Vo’s approach...\n")
+		projs = tomopy.prep.stripe.remove_dead_stripe(projs, snr=args.snr, size=args.size, ncore=args.ncore)
 
 	# Convert from 360 to 180 degree sinograms
 	if args.fullturn:
@@ -219,11 +229,11 @@ def main():
 		if 'fbp' in args.algorithm:
 			options = {'proj_type': 'cuda', 'method': 'FBP_CUDA'}
 		elif 'sirt' in args.algorithm:
-			options = {'proj_type': 'cuda', 'method': 'SIRT_CUDA'}
+			options = {'proj_type': 'cuda', 'method': 'SIRT_CUDA', 'num_iter': args.num_iter}
 		elif 'sart' in args.algorithm:
-			options = {'proj_type': 'cuda', 'method': 'SART_CUDA'}
+			options = {'proj_type': 'cuda', 'method': 'SART_CUDA', 'num_iter': args.num_iter}
 		elif 'cgls' in args.algorithm:
-			options = {'proj_type': 'cuda', 'method': 'CGLS_CUDA'}
+			options = {'proj_type': 'cuda', 'method': 'CGLS_CUDA', 'num_iter': args.num_iter}
 		else:
 			logging.warning("Algorithm option not recognized. Will reconstruct with ASTRA FBP CUDA.")
 			options = {'proj_type': 'cuda', 'method': 'FBP_CUDA'}

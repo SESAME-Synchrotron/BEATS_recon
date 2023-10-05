@@ -20,8 +20,9 @@ master_file = solara.reactive("/home/gianthk/Data/BEATS/IH/scratch/master.csv")
 recon_dir = solara.reactive("/home/gianthk/Data/BEATS/IH/scratch/pippo/recon")
 cor_dir = solara.reactive("/home/gianthk/Data/BEATS/IH/scratch/pippo/cor")
 ncore = solara.reactive(4)
-algorithms = ["gridrec", "fbp_cuda"]
+algorithms = ["gridrec", "fbp_cuda_astra", "sirt_cuda_astra", "sart_cuda_astra", "cgls_cuda_astra"]
 algorithm = solara.reactive("gridrec")
+num_iter = solara.reactive(50)
 norm_auto = solara.reactive(True)
 COR_range = solara.reactive((1260, 1300)) # COR_range_min.value, COR_range_max.value
 COR_slice_ind = solara.reactive(1000) # int(projs.shape[0]/2)
@@ -295,7 +296,24 @@ def reconstruct_dataset():
     global theta
     global recon
     recon_status.set(True)
-    recon = tomopy.recon(sinogram(), theta, center=COR.value, algorithm=algorithm.value, sinogram_order=False, ncore=ncore.value)
+    # recon = tomopy.recon(sinogram(), theta, center=COR.value, algorithm=algorithm.value, sinogram_order=False, ncore=ncore.value)
+
+    if 'cuda_astra' in algorithm.value:
+        if 'fbp' in algorithm.value:
+            options = {'proj_type': 'cuda', 'method': 'FBP_CUDA'}
+        elif 'sirt' in algorithm.value:
+            options = {'proj_type': 'cuda', 'method': 'SIRT_CUDA', 'num_iter': num_iter.value}
+        elif 'sart' in algorithm.value:
+            options = {'proj_type': 'cuda', 'method': 'SART_CUDA', 'num_iter': num_iter.value}
+        elif 'cgls' in algorithm.value:
+            options = {'proj_type': 'cuda', 'method': 'CGLS_CUDA', 'num_iter': num_iter.value}
+        else:
+            print("Algorithm option not recognized. Will reconstruct with ASTRA FBP CUDA.")
+            options = {'proj_type': 'cuda', 'method': 'FBP_CUDA'}
+        recon = tomopy.recon(sinogram(), theta, center=COR.value, algorithm=tomopy.astra, options=options, ncore=1)
+    else:
+        recon = tomopy.recon(sinogram(), theta, center=COR.value, algorithm=algorithm.value, sinogram_order=False, ncore=ncore.value)
+
     if phase_object.value:
         if not phase_retrieved.value:
             solara.Error("Phase info not retrieved! I will reconstruct an absorption dataset.", text=False, dense=True, outlined=False)
@@ -335,6 +353,11 @@ def write_recon():
             dxchange.writer.write_tiff_stack(recon, fname=fileout, axis=0, digit=4, start=0, overwrite=True)
     recon_status.set(False)
     print("Dataset written to disk.")
+
+def cluster_run():
+    print('launch recon on rum...')
+
+    # del variables
 
 @solara.component
 def CORdisplay():
@@ -560,10 +583,11 @@ def Page():
                 CORdisplay()
                 CORinspect()
 
-
     with solara.Card("CT reconstruction", margin=0, classes=["my-2"]):
         with solara.Columns([0,1,2], gutters_dense=True):
-            Recon()
+            with solara.Column():
+                Recon()
+                solara.Button(label="Submit to cluster", icon_name="mdi-rocket", on_click=lambda: cluster_run(), disabled=False, color="primary")
             OutputControls()
             ReconHistogram()
 
