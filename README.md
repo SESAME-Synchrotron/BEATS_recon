@@ -127,8 +127,8 @@ ValueError: The dimensions of the data do not match those specified in the geome
 - [ ] test different **Ring removal** algorithms
 - [ ] test different **Filters**
 #### LEVEL 3 - expert
-- [ ] TomoPy recon **GUI**
-- [ ] print **recon report** (Latex)
+- [ ] TomoPy recon **GUI** `al-recon`
+- [ ] print **recon report** (HTML?)
 - [ ] **batch recon** from .CSV table using pandas (through config files)
 ___
 
@@ -162,9 +162,4 @@ python -m ipykernel install --user --name tomopy --display-name "conda (tomopy_s
 Lanuch Jupyter Notebook
 ```commandline
 jupyter notebook &
-```
-
-### Run [solara](https://solara.dev/api/file_browser) app on localhost
-```commandline
-solara run file_browser.py --host localhost
 ```
