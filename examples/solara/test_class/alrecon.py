@@ -25,7 +25,10 @@ class alrecon:
 			alrecon_settings = yaml.load(file_object, Loader=yaml.SafeLoader)
 
 			# some app settings
-			self.pixelsize.set(alrecon_settings['phase-retrieval']['pixelsize'])
+			for key, val in alrecon_settings['phase-retrieval'].items():
+				print('key: {0}; val: {1}'.format(key, val))
+				exec('self.'+key + '.set(val)')
+			# self.pixelsize.set(alrecon_settings['phase-retrieval']['pixelsize'])
 
 		print('Loaded settings file: {0}'.format(filename))
 		print('Loaded pixelsize: {0}'.format(self.pixelsize))
