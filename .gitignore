@@ -1,2 +1,14 @@
 *checkpoint.ipynb
+*checkpoint.py
 /.idea/
+.gitignore
+/examples/solara/multipage-demo
+/examples/solara/multipage-demo2
+/examples/solara/solara-test-portal
+/examples/solara/alrecon/alrecon/old_pages
+/examples/solara/file_browser.py
+/examples/solara/sol*
+/keys/alrecon-f048b037c351.json
+/.ipynb_checkpoints
+/examples/solara/alrecon/.flake8
+/tests/pippo
