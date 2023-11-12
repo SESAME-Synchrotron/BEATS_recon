@@ -89,9 +89,7 @@ def main():
 						help='Reconstruction algorithm. Options are: gridrec, fbp, fbp_astra, fbp_cuda_astra, sirt, sirt_cuda, sirt_cuda_astra, sart_cuda_astra, cgls_cuda_astra, mlem, art.'
 							' Visit https://tomopy.readthedocs.io/en/latest/api/tomopy.recon.algorithm.html for more info.')
 	parser.add_argument('--num_iter', type=int, default=50, help='Number of iterations for iterative reconstruction.')
-	parser.add_argument('--remove_stripe', dest='remove_stripe', action='store_true',
-						help='Remove stripe artifacts from sinogram.')
-	parser.add_argument('--stripe_method', type=str, default='remove_all_stripe',
+	parser.add_argument('--stripe_method', type=str, default='None',
 						help='Stripe removal method. Available options are: remove_dead_stripe, remove_large_stripe, remove_stripe_based_sorting, and remove_all_stripe')
 	parser.add_argument('--snr', type=float, default=3.0, help='Ratio used to locate of large stripes. Greater is less sensitive.')
 	parser.add_argument('--size', type=int, default=51, help='Window size of the median filter.')
@@ -167,20 +165,20 @@ def main():
 	logging.info("Flat-field correct.\n")
 	projs = tomopy.normalize(projs, flats, darks, ncore=args.ncore)
 
-	if args.remove_stripe:
-		if 'dead' in args.algorithm:
+	if args.stripe_method is not 'None':
+		if 'dead' in args.stripe_method:
 			# Remove unresponsive and fluctuating stripe artifacts from sinogram using Nghia Vo’s approach [B23] (algorithm 6).
 			logging.info("Remove unresponsive and fluctuating stripe artifacts from sinogram using TomoPy Nghia Vo’s approach...\n")
 			projs = tomopy.prep.stripe.remove_dead_stripe(projs, snr=args.snr, size=args.size, ncore=args.ncore)
-		elif 'large' in args.algorithm:
+		elif 'large' in args.stripe_method:
 			# Remove large stripe artifacts from sinogram using Nghia Vo’s approach [B23] (algorithm 5).
 			logging.info("Remove large stripe artifacts from sinogram using Nghia Vo’s approach...\n")
 			projs = tomopy.prep.stripe.remove_dead_stripe(projs, snr=args.snr, size=args.size, drop_ratio=args.drop_ratio, norm=args.norm, ncore=args.ncore)
-		elif 'sorting' in args.algorithm:
+		elif 'sorting' in args.stripe_method:
 			# Remove full and partial stripe artifacts from sinogram using Nghia Vo’s approach [B23] (algorithm 3). Suitable for removing partial stripes.
 			logging.info("Remove full and partial stripe artifacts from sinogram using Nghia Vo’s approach. Suitable for removing partial stripes...\n")
 			projs = tomopy.prep.stripe.remove_stripe_based_sorting(projs, size=args.size, dim=args.dim, ncore=args.ncore)
-		elif 'all' in args.algorithm:
+		elif 'all' in args.stripe_method:
 			# Remove all types of stripe artifacts from sinogram using Nghia Vo’s approach [B23] (combination of algorithm 3,4,5, and 6).
 			logging.info("Remove all types of stripe artifacts from sinogram using Nghia Vo’s approach...\n")
 			projs = tomopy.prep.stripe.remove_all_stripe(projs, snr=args.snr, la_size=args.la_size, sm_size=args.sm_size, dim=args.dim, ncore=args.ncore)
