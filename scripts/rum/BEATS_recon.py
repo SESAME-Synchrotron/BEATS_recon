@@ -9,12 +9,12 @@ For more information, call this script with the help option:
 
 __author__ = ['Gianluca Iori']
 __date_created__ = '2023-05-15'
-__date__ = '2023-07-23'
-__copyright__ = 'Copyright (c) 2023, SESAME BEATS'
+__date__ = '2023-11-10'
+__copyright__ = 'Copyright (c) 2023, SESAME'
 __docformat__ = 'restructuredtext en'
 __license__ = "MIT"
 __maintainer__ = 'Gianluca Iori'
-__email__ = "gianluca.iori@sesame.org.jo"
+__email__ = "gianthk.iori@gmail.com"
 
 import tomopy
 import dxchange
