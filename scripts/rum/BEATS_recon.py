@@ -217,10 +217,14 @@ def main():
 		logging.info("	- Number of cores: {0}\n".format(args.ncore))
 
 		phase_start_time = time()
+		# Retrieve phase
 		projs = tomopy.retrieve_phase(projs, pixel_size=0.1*pixel_size, dist=0.1*dist, energy=energy, alpha=args.alpha, pad=args.phase_pad, ncore=args.ncore, nchunk=None)
 		phase_end_time = time()
 		phase_time = phase_end_time - phase_start_time
 		logging.info("Phase retrieval time: {} s\n".format(str(phase_time)))
+		# Perform - log transform
+		logging.info("Applying - log transform.\n")
+		projs = tomopy.minus_log(projs, ncore=args.ncore)
 	else:
 		# Perform - log transform
 		logging.info("Applying - log transform.\n")
