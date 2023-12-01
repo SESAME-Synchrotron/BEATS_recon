@@ -3,7 +3,7 @@
 
 # add local path to reconstruction utilities repo
 import sys
-sys.path.append('/home/beats/PycharmProjects/recon_utils')
+sys.path.append('/home/beatsbs/PycharmProjects/recon_utils')
 
 # default imports
 import os
