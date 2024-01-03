@@ -255,8 +255,10 @@ def main():
 	logging.info("COR: {}\n".format(COR))
 
 	# Reconstruction
-	logging.info("Start reconstruction with algorithm: " + args.algorithm)
 	recon_start_time = time()
+	preprocess_time = recon_start_time - time_start
+	logging.info("Dataset loaded and preprocessed in {} s\n".format(str(preprocess_time)))
+	logging.info("Start reconstruction with algorithm: " + args.algorithm)
 	if 'cuda_astra' in args.algorithm:
 		if 'fbp' in args.algorithm:
 			options = {'proj_type': 'cuda', 'method': 'FBP_CUDA'}
