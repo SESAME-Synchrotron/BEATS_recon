@@ -107,6 +107,10 @@ def main():
 	parser.add_argument('--circ_mask_ratio', type=float, default=1.0,
 						help='Ratio of the mask’s diameter in pixels to the smallest slice size.')
 	parser.add_argument('--circ_mask_val', type=float, default=0.0, help='Value for the masked region.')
+	parser.add_argument('--output', dest='output', action='store_true',
+						help='Write output reconstructed dataset.')
+	parser.add_argument('--no-output', dest='output', action='store_false',
+						help='Run reconstruction in testing mode. Do not write reconstruction output.')
 	parser.add_argument('--midplanes', dest='write_midplanes', action='store_true',
 						help='Write midplane images through the reconstructed volume.')
 	parser.add_argument('--dtype', type=str, default='float32',
@@ -120,7 +124,7 @@ def main():
 	parser.add_argument('--crop', type=int, default=None, nargs='+',
 	                    help='Crop reconstruction volume with parameters: [X_start, X_size, Y_start, Y_size, Z_start, Z_size]. If argument is negative the corresponding axis is not cropped.')
 	parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help='Verbose output.')
-	parser.set_defaults(fullturn=False, phase=False, phase_pad=True, circ_mask=False, write_midplanes=False, verbose=False, norm=True)
+	parser.set_defaults(fullturn=False, phase=False, phase_pad=True, circ_mask=False, write_midplanes=False, verbose=False, norm=True, output=True)
 
 	args = parser.parse_args()
 
@@ -334,9 +338,10 @@ def main():
 		logging.info("	Z_start: {0};   Z_size: {1}\n".format(Z_start, Z_end-Z_start))
 		recon = recon[Z_start:Z_end, Y_start:Y_end, X_start:X_end]
 
-	logging.info('Writing reconstructed dataset.\n')
-	logging.info('converted dtype: {}.\n'.format(str(recon.dtype)))
-	dxchange.writer.write_tiff_stack(recon, fname=recon_dir + '/slice.tiff', dtype=args.dtype, axis=0, digit=4, start=0, overwrite=True)
+	if args.output:
+		logging.info('Writing reconstructed dataset.\n')
+		logging.info('Dataset dtype: {}.\n'.format(str(recon.dtype)))
+		dxchange.writer.write_tiff_stack(recon, fname=recon_dir + '/slice.tiff', dtype=args.dtype, axis=0, digit=4, start=0, overwrite=True)
 
 	if args.write_midplanes:
 		ru.writemidplanesDxchange(recon, work_dir + '/slice.tiff')
