@@ -9,8 +9,8 @@ For more information, call this script with the help option:
 
 __author__ = ['Gianluca Iori']
 __date_created__ = '2023-05-15'
-__date__ = '2023-11-10'
-__copyright__ = 'Copyright (c) 2023, SESAME'
+__date__ = '2024-01-03'
+__copyright__ = 'Copyright (c) 2024, SESAME'
 __docformat__ = 'restructuredtext en'
 __license__ = "MIT"
 __maintainer__ = 'Gianluca Iori'
@@ -85,6 +85,7 @@ def main():
 	parser.add_argument('--cor_method', type=str, default='Vo',
 						help='Method for automatic finding of the rotation axis location.')
 	parser.add_argument('--ncore', type=int, default=36, help='Number of cores that will be assigned to jobs.')
+	parser.add_argument('--nchunk', type=int, default=None, help='Chunk size for each core.')
 	parser.add_argument('--algorithm', type=str, default='gridrec',
 						help='Reconstruction algorithm. Options are: gridrec, fbp, fbp_astra, fbp_cuda_astra, sirt, sirt_cuda, sirt_cuda_astra, sart_cuda_astra, cgls_cuda_astra, mlem, art.'
 							' Visit https://tomopy.readthedocs.io/en/latest/api/tomopy.recon.algorithm.html for more info.')
@@ -264,9 +265,9 @@ def main():
 		else:
 			logging.warning("Algorithm option not recognized. Will reconstruct with ASTRA FBP CUDA.")
 			options = {'proj_type': 'cuda', 'method': 'FBP_CUDA'}
-		recon = tomopy.recon(projs, theta, center=COR, algorithm=tomopy.astra, options=options, ncore=1)
+		recon = tomopy.recon(projs, theta, center=COR, algorithm=tomopy.astra, options=options,ncore=args.ncore, nchunk=args.nchunk)
 	else:
-		recon = tomopy.recon(projs, theta, center=COR, algorithm=args.algorithm, sinogram_order=False, ncore=args.ncore)
+		recon = tomopy.recon(projs, theta, center=COR, algorithm=args.algorithm, sinogram_order=False, ncore=args.ncore, nchunk=args.nchunk)
 
 	recon_end_time = time()
 	recon_time = recon_end_time - recon_start_time
