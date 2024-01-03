@@ -256,6 +256,9 @@ def main():
 
 	# Reconstruction
 	recon_start_time = time()
+	projs_shape = projs.shape
+	logging.info("Sinogram size: {2} x {1} x {0} [X x Y x Theta]".format(projs_shape[0], projs_shape[1], projs_shape[2]))
+
 	preprocess_time = recon_start_time - time_start
 	logging.info("Dataset loaded and preprocessed in {} s\n".format(str(preprocess_time)))
 	logging.info("Start reconstruction with algorithm: " + args.algorithm)
