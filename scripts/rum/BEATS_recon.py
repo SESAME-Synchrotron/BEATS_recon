@@ -90,7 +90,7 @@ def main():
 						help='Reconstruction algorithm. Options are: gridrec, fbp, fbp_astra, fbp_cuda_astra, sirt, sirt_cuda, sirt_cuda_astra, sart_cuda_astra, cgls_cuda_astra, mlem, art.'
 							' Visit https://tomopy.readthedocs.io/en/latest/api/tomopy.recon.algorithm.html for more info.')
 	parser.add_argument('--num_iter', type=int, default=50, help='Number of iterations for iterative reconstruction.')
-	parser.add_argument('--stripe_method', type=str, default='None',
+	parser.add_argument('--stripe_method', type=str, default=None,
 						help='Stripe removal method. Available options are: remove_dead_stripe, remove_large_stripe, remove_stripe_based_sorting, and remove_all_stripe')
 	parser.add_argument('--snr', type=float, default=3.0, help='Ratio used to locate of large stripes. Greater is less sensitive.')
 	parser.add_argument('--size', type=int, default=51, help='Window size of the median filter.')
@@ -170,7 +170,7 @@ def main():
 	logging.info("Flat-field correct.\n")
 	projs = tomopy.normalize(projs, flats, darks, ncore=args.ncore)
 
-	if args.stripe_method is not 'None':
+	if args.stripe_method is not None:
 		if 'dead' in args.stripe_method:
 			# Remove unresponsive and fluctuating stripe artifacts from sinogram using Nghia Vo’s approach [B23] (algorithm 6).
 			logging.info("Remove unresponsive and fluctuating stripe artifacts from sinogram using TomoPy Nghia Vo’s approach...\n")
