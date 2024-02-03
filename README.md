@@ -39,4 +39,4 @@ python -m ipykernel install --user --name tomopy --display-name "conda (tomopy_s
 ```
 
 ## Roadmap
-[Roadmap and list of tested features](examples/README.md)
+[Roadmap and list of tested features](tests/README.md)
