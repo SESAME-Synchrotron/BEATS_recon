@@ -1,6 +1,6 @@
 # BEATS_recon
 
-[TomoPy](https://tomopy.readthedocs.io/en/latest/) reconstruction scripts, notebooks and examples for the [BEATS beamline](https://beats-sesame.eu/) of [SESAME](https://www.sesame.org.jo/). <br />
+[TomoPy](https://tomopy.readthedocs.io/en/latest/) reconstruction scripts, notebooks and examples for the [ID10-BEATS beamline](https://www.sesame.org.jo/beamlines/beats) of [SESAME](https://www.sesame.org.jo/). <br />
 Datasets for running the tests can be found on the [TomoBank](https://tomobank.readthedocs.io/en/latest/)
 
 ## Examples:
