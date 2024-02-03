@@ -1,4 +1,4 @@
-# BEATS_recon: List of features and tests
+# BEATS_recon: list of features and tests
 Below you find a list of tested features and project milestones.
 
 ## BEATS recon notebooks
@@ -34,7 +34,6 @@ Below you find a list of tested features and project milestones.
 - [X] write output TIFF stack
 - [X] imagej launcher
 
----
 ## BEATS recon script
 - [ ] documentation
 - [X] argparse
@@ -82,7 +81,6 @@ Below you find a list of tested features and project milestones.
 - [ ] (?) visualize master ([examples](https://pbpython.com/dataframe-gui-overview.html))
 - [ ] generate slurm `bash` script from master
 
----
 ## Tests:
 ### rum@sesame:
 - [X] (OK) kblt spring reconstruction (SED dataset; small)
@@ -105,7 +103,6 @@ ValueError: The dimensions of the data do not match those specified in the geome
   - [X] (OK) complete on BL-BEATS-WS01 (recon shape: 4129 x 4129 x 2160) (tomopy gridrec; ncore=36; 172sec; 303G/503G)
 - [ ] tomocupy
 
----
 ## Milestones:
 #### LEVEL 1 - beginner
 - [x] **absorption** reco
@@ -130,7 +127,6 @@ ValueError: The dimensions of the data do not match those specified in the geome
 - [X] TomoPy recon **GUI** `al-recon`
 - [ ] print **recon report** (HTML?)
 - [ ] **batch recon** from .CSV table using pandas (through config files)
-___
 
 ## Examples:
 - [TomoPy TEST 01](tests/TomoPy_test01.ipynb)

@@ -6,7 +6,6 @@ Datasets for running the tests can be found on the [TomoBank](https://tomobank.r
 ## Examples:
 
 
----
 ## Notes:
 
 Activate TomoPy reconstruction environment
