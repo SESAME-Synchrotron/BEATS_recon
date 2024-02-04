@@ -5,9 +5,12 @@ Datasets for running the tests can be found on the [TomoBank](https://tomobank.r
 
 [![GitHub license](https://img.shields.io/github/license/SESAME-Synchrotron/BEATS_recon)](https://github.com/SESAME-Synchrotron/BEATS_recon/blob/master/LICENSE)
 
-
 ## Examples:
-
+| Notebook                    | Description             | Binder URL |
+|:----------------------------|:------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------|
+| **BEATS_recon.ipynb**       | Standard reconstruction | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SESAME-Synchrotron/BEATS_recon/HEAD?labpath=BEATS_recon.ipynb) |
+| **BEATS_recon-phase.ipynb** | Phase retrieval         | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SESAME-Synchrotron/BEATS_recon/HEAD?labpath=BEATS_recon-phase.ipynb) |
+| **convert360to180.ipynb** | Extended field-of-view  | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SESAME-Synchrotron/BEATS_recon/HEAD?labpath=convert360to180.ipynb) |
 
 ## Notes:
 
