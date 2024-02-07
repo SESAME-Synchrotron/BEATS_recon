@@ -25,7 +25,7 @@ plt.style.use('ggplot')
 logging.basicConfig(level=logging.INFO)
 
 # Fiji executable
-Fiij_exe = '/opt/fiji-linux64/Fiji.app/ImageJ-linux64'
+Fiij_exe = '/opt/Fiji.app/ImageJ-linux64'
 Fiji_exe_stack = Fiij_exe + ' -macro FolderOpener_virtual.ijm '
 
 # ncore setting for BL-BEATS-WS01
