@@ -218,7 +218,7 @@ def main():
 
 		phase_start_time = time()
 		# Retrieve phase
-		projs = tomopy.retrieve_phase(projs, pixel_size=0.1*pixel_size, dist=0.1*dist, energy=energy, alpha=args.alpha, pad=args.phase_pad, ncore=args.ncore, nchunk=None)
+		projs = tomopy.retrieve_phase(projs, pixel_size=0.1*pixel_size, dist=0.1*dist, energy=energy, alpha=args.alpha, pad=args.phase_pad, ncore=args.ncore, nchunk=args.nchunk)
 		phase_end_time = time()
 		phase_time = phase_end_time - phase_start_time
 		logging.info("Phase retrieval time: {} s\n".format(str(phase_time)))
@@ -336,7 +336,8 @@ def main():
 	logging.info('Writing reconstructed dataset.\n')
 	logging.info('converted dtype: {}.\n'.format(str(recon.dtype)))
 	dxchange.writer.write_tiff_stack(recon, fname=recon_dir + '/slice.tiff', dtype=args.dtype, axis=0, digit=4, start=0, overwrite=True)
-
+	os.chmod(recon_dir, 0o0777)
+	
 	if args.write_midplanes:
 		ru.writemidplanesDxchange(recon, work_dir + '/slice.tiff')
 
