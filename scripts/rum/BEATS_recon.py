@@ -355,7 +355,7 @@ def main():
 		logging.info('Writing reconstructed dataset.\n')
 		logging.info('Dataset dtype: {}.\n'.format(str(recon.dtype)))
 		dxchange.writer.write_tiff_stack(recon, fname=recon_dir + '/slice.tiff', dtype=args.dtype, axis=0, digit=4, start=0, overwrite=True)
-	os.chmod(recon_dir, 0o0777)
+		os.chmod(recon_dir, 0o0777)
 
 	if args.write_midplanes:
 		ru.writemidplanesDxchange(recon, os.path.dirname(recon_dir) + '.tiff')
