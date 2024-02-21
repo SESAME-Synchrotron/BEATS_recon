@@ -88,6 +88,7 @@ def main():
 	parser.add_argument('--algorithm', type=str, default='gridrec',
 						help='Reconstruction algorithm. Options are: gridrec, fbp, fbp_astra, fbp_cuda_astra, sirt, sirt_cuda, sirt_cuda_astra, sart_cuda_astra, cgls_cuda_astra, mlem, art.'
 							' Visit https://tomopy.readthedocs.io/en/latest/api/tomopy.recon.algorithm.html for more info.')
+	parser.add_argument('--nchunk', type=int, default=None, help='Chunk size for each core.')
 	parser.add_argument('--num_iter', type=int, default=50, help='Number of iterations for iterative reconstruction.')
 	parser.add_argument('--stripe_method', type=str, default='None',
 						help='Stripe removal method. Available options are: remove_dead_stripe, remove_large_stripe, remove_stripe_based_sorting, and remove_all_stripe')
@@ -339,7 +340,8 @@ def main():
 	os.chmod(recon_dir, 0o0777)
 	
 	if args.write_midplanes:
-		ru.writemidplanesDxchange(recon, work_dir + '/slice.tiff')
+		# ru.writemidplanesDxchange(recon, work_dir + '/slice.tiff')
+		ru.writemidplanesDxchange(recon, os.path.dirname(recon_dir) + '.tiff')
 
 	time_end = time()
 	execution_time = time_end - time_start
