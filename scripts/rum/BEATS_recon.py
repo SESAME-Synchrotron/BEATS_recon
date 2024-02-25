@@ -120,6 +120,7 @@ def main():
 						help='Range [min, max] for integer conversion. Used if an integer dtype is specified.')
 	parser.add_argument('--data_quantiles', type=float, default=None, nargs='+',
 						help='Quantiles [min, max] for integer conversion. Used if an integer dtype is specified.')
+	parser.add_argument('--flats_seperate', type=str, default=None, help='folder with separate file containing flat fields.')
 	parser.add_argument('--flip', type=int, default=None, nargs='+',
 	                    help='Flip reconstruction volume along given axis. --flip 1 2 rotates the reconstruction by 180 degrees around Z-axis.')
 	parser.add_argument('--crop', type=int, default=None, nargs='+',
@@ -158,6 +159,8 @@ def main():
 
 	# read projections, darks, flats and angles
 	projs, flats, darks, _ = dxchange.read_aps_32id(args.h5file, exchange_rank=0, proj=args.proj, sino=args.sino)
+	if args.flats_seperate:
+		_, flats, _, _ = dxchange.read_aps_32id(args.flats_seperate, exchange_rank=0, proj=args.proj, sino=args.sino)
 	theta = np.radians(dxchange.read_hdf5(args.h5file, 'exchange/theta', slc=(args.proj,)))
 
 	# If the angular information is not available from the raw data, we need to set the data collection angles.
