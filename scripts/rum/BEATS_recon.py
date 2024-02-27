@@ -9,7 +9,7 @@ For more information, call this script with the help option:
 
 __author__ = ['Gianluca Iori']
 __date_created__ = '2023-05-15'
-__date__ = '2024-01-03'
+__date__ = '2024-02-27'
 __copyright__ = 'Copyright (c) 2024, SESAME'
 __docformat__ = 'restructuredtext en'
 __license__ = "MIT"
@@ -38,6 +38,30 @@ def read_phase_retrieval_params(h5file):
 	return pixel_size, magnification, dist, energy
 
 
+def average_sinogram_by_interval(_projs, slicer=1, remove_last_n_to_make_suited_size_for_reshape='auto'):
+	"""
+    remove_last_n_to_make_suited_size_for_reshape can be an index or string: None, auto
+    """
+	if remove_last_n_to_make_suited_size_for_reshape == 'auto':
+		# implement the calculation of a proper last index
+		modulo = _projs.shape[0] % slicer
+		if modulo != 0:
+			remove_last_n_to_make_suited_size_for_reshape = -modulo
+
+	if isinstance(remove_last_n_to_make_suited_size_for_reshape, int):
+		_projs = _projs[:remove_last_n_to_make_suited_size_for_reshape, :, :]
+
+	shape_projs = _projs.shape
+
+	shape_projs_reduced = (shape_projs[0] // slicer, slicer, shape_projs[1], shape_projs[2])
+
+	array_reduced_by_averaging = _projs.reshape(shape_projs_reduced).astype(np.float32)
+	array_reduced_by_averaging = array_reduced_by_averaging.mean(axis=1)
+
+	array_reduced_by_averaging = array_reduced_by_averaging.astype(np.uint16)
+
+	return array_reduced_by_averaging
+
 def main():
 	description = textwrap.dedent('''\
 	TomoPy reconstruction script for the BEATS beamline of SESAME.
@@ -64,6 +88,7 @@ def main():
 	parser.add_argument('-s', '--sino', type=int, default=None, nargs='+', help='Specify sinograms to read. (start, end, step)')
 	parser.add_argument('--work_dir', type=str, default=None, help='Work folder.')
 	parser.add_argument('--recon_dir', type=str, default=None, help='Output reconstruction folder.')
+	parser.add_argument('--average', type=int, default=None, help='Average each n projections.')
 	parser.add_argument('--phase', dest='phase', action='store_true',
 						help='Perform single-step phase retrieval from phase-contrast measurements.')
 	parser.add_argument('--alpha', type=float, default=0.001, help='Phase retrieval regularization parameter.')
@@ -76,8 +101,6 @@ def main():
 	parser.add_argument('--phase_pad', dest='phase_pad', action='store_true',
 						help='Extend the size of the projections by padding with zeros.')
 	parser.add_argument('--no-phase_pad', dest='phase_pad', action='store_false')
-	# parser.add_argument('--phase_pad', type=bool, default=True,
-	#                     help='Extend the size of the projections by padding with zeros.')
 	parser.add_argument('--360', dest='fullturn', action='store_true', help='360 degrees scan.')
 	parser.add_argument('--overlap', type=int, default=0, help='Overlap parameter for 360 degrees scan.')
 	parser.add_argument('--rotside', type=str, default='left', help='Rotation axis side for 360 degrees scan.')
@@ -163,10 +186,16 @@ def main():
 		_, flats, _, _ = dxchange.read_aps_32id(args.flats_seperate, exchange_rank=0, proj=args.proj, sino=args.sino)
 	theta = np.radians(dxchange.read_hdf5(args.h5file, 'exchange/theta', slc=(args.proj,)))
 
+	# average the sinogram
+	if args.average is not None:
+		projs = average_sinogram_by_interval(projs, slicer=args.average)
+		args.simulate_theta = True
+
 	# If the angular information is not available from the raw data, we need to set the data collection angles.
 	if args.simulate_theta:
 		# In this case, theta is set as equally spaced between 0-180 degrees.
 		theta = tomopy.angles(projs.shape[0])
+		logging.info("Theta generated with TomoPy.")
 	else:
 		theta = np.radians(dxchange.read_hdf5(args.h5file, 'exchange/theta', slc=(args.proj,)))
 		if theta is None:
@@ -204,6 +233,7 @@ def main():
 		projs = tomopy.sino_360_to_180(projs, args.overlap, args.rotside)
 		# simulate theta for the stitched sinogram
 		theta = tomopy.angles(projs.shape[0])
+		logging.info("Theta generated with TomoPy.")
 
 	# Phase retrieval
 	if args.phase:
