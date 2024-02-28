@@ -105,6 +105,7 @@ def main():
 	parser.add_argument('--overlap', type=int, default=0, help='Overlap parameter for 360 degrees scan.')
 	parser.add_argument('--rotside', type=str, default='left', help='Rotation axis side for 360 degrees scan.')
 	parser.add_argument('--simulate_theta', dest='simuate_theta', action='store_true', help='Generate array of angles Theta.')
+	parser.add_argument('--theta_offset', type=float, default=None, help='Add offset to theta array (degrees).')
 	parser.add_argument('--cor', type=float, default=None, help='Center Of Rotation.')
 	parser.add_argument('--cor_method', type=str, default='Vo',
 						help='Method for automatic finding of the rotation axis location.')
@@ -250,6 +251,11 @@ def main():
 		# simulate theta for the stitched sinogram
 		theta = tomopy.angles(projs.shape[0])
 		logging.info("Theta generated with TomoPy.")
+
+	# Add offset to theta array
+	if args.theta_offset is not None:
+		theta = theta + np.deg2rad(args.theta_offset)
+		logging.info("Added {0} degree offset to theta array.\n".format(args.theta_offset))
 
 	# Phase retrieval
 	if args.phase:
