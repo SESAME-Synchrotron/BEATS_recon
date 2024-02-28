@@ -228,19 +228,19 @@ def main():
 		if 'dead' in args.stripe_method:
 			# Remove unresponsive and fluctuating stripe artifacts from sinogram using Nghia Vo’s approach [B23] (algorithm 6).
 			logging.info("Remove unresponsive and fluctuating stripe artifacts from sinogram using TomoPy Nghia Vo’s approach...\n")
-			projs = tomopy.prep.stripe.remove_dead_stripe(projs, snr=args.snr, size=args.size, ncore=args.ncore)
+			projs = tomopy.prep.stripe.remove_dead_stripe(projs, snr=args.snr, size=args.size, ncore=args.ncore, nchunk=args.nchunk)
 		elif 'large' in args.stripe_method:
 			# Remove large stripe artifacts from sinogram using Nghia Vo’s approach [B23] (algorithm 5).
 			logging.info("Remove large stripe artifacts from sinogram using Nghia Vo’s approach...\n")
-			projs = tomopy.prep.stripe.remove_dead_stripe(projs, snr=args.snr, size=args.size, drop_ratio=args.drop_ratio, norm=args.norm, ncore=args.ncore)
+			projs = tomopy.prep.stripe.remove_dead_stripe(projs, snr=args.snr, size=args.size, drop_ratio=args.drop_ratio, norm=args.norm, ncore=args.ncore, nchunk=args.nchunk)
 		elif 'sorting' in args.stripe_method:
 			# Remove full and partial stripe artifacts from sinogram using Nghia Vo’s approach [B23] (algorithm 3). Suitable for removing partial stripes.
 			logging.info("Remove full and partial stripe artifacts from sinogram using Nghia Vo’s approach. Suitable for removing partial stripes...\n")
-			projs = tomopy.prep.stripe.remove_stripe_based_sorting(projs, size=args.size, dim=args.dim, ncore=args.ncore)
+			projs = tomopy.prep.stripe.remove_stripe_based_sorting(projs, size=args.size, dim=args.dim, ncore=args.ncore, nchunk=args.nchunk)
 		elif 'all' in args.stripe_method:
 			# Remove all types of stripe artifacts from sinogram using Nghia Vo’s approach [B23] (combination of algorithm 3,4,5, and 6).
 			logging.info("Remove all types of stripe artifacts from sinogram using Nghia Vo’s approach...\n")
-			projs = tomopy.prep.stripe.remove_all_stripe(projs, snr=args.snr, la_size=args.la_size, sm_size=args.sm_size, dim=args.dim, ncore=args.ncore)
+			projs = tomopy.prep.stripe.remove_all_stripe(projs, snr=args.snr, la_size=args.la_size, sm_size=args.sm_size, dim=args.dim, ncore=args.ncore, nchunk=args.nchunk)
 		else:
 			logging.error("Stripe removal method not implemented.")
 
