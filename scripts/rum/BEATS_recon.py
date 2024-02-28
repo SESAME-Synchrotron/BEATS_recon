@@ -143,13 +143,15 @@ def main():
 						help='Range [min, max] for integer conversion. Used if an integer dtype is specified.')
 	parser.add_argument('--data_quantiles', type=float, default=None, nargs='+',
 						help='Quantiles [min, max] for integer conversion. Used if an integer dtype is specified.')
-	parser.add_argument('--flats_seperate', type=str, default=None, help='folder with separate file containing flat fields.')
+	parser.add_argument('--flats_seperate', type=str, default=None, help='Input HDF5 filename for separate file containing flat fields (flats data).')
+	parser.add_argument('--flats_scale', dest='flats_scale', action='store_true',
+						help='Automatically scale the flat field image based on the scan electron current.')
 	parser.add_argument('--flip', type=int, default=None, nargs='+',
 	                    help='Flip reconstruction volume along given axis. --flip 1 2 rotates the reconstruction by 180 degrees around Z-axis.')
 	parser.add_argument('--crop', type=int, default=None, nargs='+',
 	                    help='Crop reconstruction volume with parameters: [X_start, X_size, Y_start, Y_size, Z_start, Z_size]. If argument is negative the corresponding axis is not cropped.')
 	parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help='Verbose output.')
-	parser.set_defaults(fullturn=False, simulate_theta=False, phase=False, phase_pad=True, circ_mask=False, write_midplanes=False, verbose=False, norm=True, output=True)
+	parser.set_defaults(fullturn=False, simulate_theta=False, phase=False, phase_pad=True, circ_mask=False, write_midplanes=False, verbose=False, norm=True, output=True, flats_scale=False)
 
 	args = parser.parse_args()
 
@@ -182,9 +184,23 @@ def main():
 
 	# read projections, darks, flats and angles
 	projs, flats, darks, _ = dxchange.read_aps_32id(args.h5file, exchange_rank=0, proj=args.proj, sino=args.sino)
+	theta = np.radians(dxchange.read_hdf5(args.h5file, 'exchange/theta', slc=(args.proj,)))
+
+	# separate flat field file
 	if args.flats_seperate:
 		_, flats, _, _ = dxchange.read_aps_32id(args.flats_seperate, exchange_rank=0, proj=args.proj, sino=args.sino)
-	theta = np.radians(dxchange.read_hdf5(args.h5file, 'exchange/theta', slc=(args.proj,)))
+		logging.info("Flat field loaded from separate file: {0}\n".format(args.flats_seperate))
+
+		# scale the flat field
+		if args.flats_scale:
+			current_scan = dxchange.read_hdf5(args.h5file, '/measurement/instrument/source/current')[0]
+			current_flats = dxchange.read_hdf5(args.flats_seperate, '/measurement/instrument/source/current')[0]
+
+			flats = (current_scan / current_flats) * flats
+
+			logging.info("Scan current: {0}\n".format(current_scan))
+			logging.info("Flat current: {0}\n".format(current_flats))
+			logging.info("Flat field scaled with factor: {0}\n".format((current_scan / current_flats)))
 
 	# average the sinogram
 	if args.average is not None:
