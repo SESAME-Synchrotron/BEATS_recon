@@ -37,31 +37,6 @@ def read_phase_retrieval_params(h5file):
 
 	return pixel_size, magnification, dist, energy
 
-
-def average_sinogram_by_interval(_projs, slicer=1, remove_last_n_to_make_suited_size_for_reshape='auto'):
-	"""
-    remove_last_n_to_make_suited_size_for_reshape can be an index or string: None, auto
-    """
-	if remove_last_n_to_make_suited_size_for_reshape == 'auto':
-		# implement the calculation of a proper last index
-		modulo = _projs.shape[0] % slicer
-		if modulo != 0:
-			remove_last_n_to_make_suited_size_for_reshape = -modulo
-
-	if isinstance(remove_last_n_to_make_suited_size_for_reshape, int):
-		_projs = _projs[:remove_last_n_to_make_suited_size_for_reshape, :, :]
-
-	shape_projs = _projs.shape
-
-	shape_projs_reduced = (shape_projs[0] // slicer, slicer, shape_projs[1], shape_projs[2])
-
-	array_reduced_by_averaging = _projs.reshape(shape_projs_reduced).astype(np.float32)
-	array_reduced_by_averaging = array_reduced_by_averaging.mean(axis=1)
-
-	array_reduced_by_averaging = array_reduced_by_averaging.astype(np.uint16)
-
-	return array_reduced_by_averaging
-
 def main():
 	description = textwrap.dedent('''\
 	TomoPy reconstruction script for the BEATS beamline of SESAME.
@@ -144,7 +119,7 @@ def main():
 						help='Range [min, max] for integer conversion. Used if an integer dtype is specified.')
 	parser.add_argument('--data_quantiles', type=float, default=None, nargs='+',
 						help='Quantiles [min, max] for integer conversion. Used if an integer dtype is specified.')
-	parser.add_argument('--flats_seperate', type=str, default=None, help='Input HDF5 filename for separate file containing flat fields (flats data).')
+	parser.add_argument('--flats_separate', type=str, default=None, help='Input HDF5 filename for separate file containing flat fields (flats data).')
 	parser.add_argument('--flats_scale', dest='flats_scale', action='store_true',
 						help='Automatically scale the flat field image based on the scan electron current.')
 	parser.add_argument('--flip', type=int, default=None, nargs='+',
@@ -188,14 +163,14 @@ def main():
 	theta = np.radians(dxchange.read_hdf5(args.h5file, 'exchange/theta', slc=(args.proj,)))
 
 	# separate flat field file
-	if args.flats_seperate:
-		_, flats, _, _ = dxchange.read_aps_32id(args.flats_seperate, exchange_rank=0, proj=args.proj, sino=args.sino)
-		logging.info("Flat field loaded from separate file: {0}\n".format(args.flats_seperate))
+	if args.flats_separate:
+		_, flats, _, _ = dxchange.read_aps_32id(args.flats_separate, exchange_rank=0, proj=args.proj, sino=args.sino)
+		logging.info("Flat field loaded from separate file: {0}\n".format(args.flats_separate))
 
 		# scale the flat field
 		if args.flats_scale:
 			current_scan = dxchange.read_hdf5(args.h5file, '/measurement/instrument/source/current')[0]
-			current_flats = dxchange.read_hdf5(args.flats_seperate, '/measurement/instrument/source/current')[0]
+			current_flats = dxchange.read_hdf5(args.flats_separate, '/measurement/instrument/source/current')[0]
 
 			flats = (current_scan / current_flats) * flats
 
@@ -205,7 +180,8 @@ def main():
 
 	# average the sinogram
 	if args.average is not None:
-		projs = average_sinogram_by_interval(projs, slicer=args.average)
+		projs = ru.average_sinogram_by_interval(projs, slicer=args.average)
+		logging.info("Averaged each {0} projections.\n".format(args.average))
 		args.simulate_theta = True
 
 	# If the angular information is not available from the raw data, we need to set the data collection angles.
@@ -224,6 +200,7 @@ def main():
 	logging.info("Flat-field correct.\n")
 	projs = tomopy.normalize(projs, flats, darks, ncore=args.ncore)
 
+	# stripe-removal step
 	if args.stripe_method is not None:
 		if 'dead' in args.stripe_method:
 			# Remove unresponsive and fluctuating stripe artifacts from sinogram using Nghia Vo’s approach [B23] (algorithm 6).
@@ -350,12 +327,19 @@ def main():
 	if args.circ_mask:
 		# apply circular mask
 		recon = tomopy.circ_mask(recon, axis=0, ratio=args.circ_mask_ratio, val=args.circ_mask_val)
+		logging.info("Applied circular mask of {}%.\n".format(100*args.circ_mask_ratio))
+
+		if args.crop is None:
+			crop_size = int(np.ceil(recon_shape[2] * args.circ_mask_ratio))
+			crop_start = int(np.floor((recon_shape[2] - crop_size)/2))
+
+			args.crop = [crop_start, crop_size, crop_start, crop_size, -1, -1]
 
 	if 'uint' in args.dtype:
 		logging.info("Rescale dataset to {}.\n".format(args.dtype))
 		if args.data_range:
 			logging.info("Data range for rescale given by user: {}.\n".format(args.data_range))
-		recon = ru.touint(recon, args.dtype, args.data_range, args.data_quantiles)
+		recon = ru.touint(recon, args.dtype, args.data_range, args.data_quantiles, nchunk=args.nchunk)
 
 	if args.flip:
 		logging.info("Flip reconstruction around axis: {}.\n".format(args.flip))
@@ -413,7 +397,7 @@ def main():
 		os.chmod(recon_dir, 0o0777)
 
 	if args.write_midplanes:
-		ru.writemidplanesDxchange(recon, os.path.dirname(recon_dir) + '.tiff')
+		ru.writemidplanesDxchange(recon, os.path.dirname(recon_dir) + '.tiff', dtype=args.dtype)
 
 	time_end = time()
 	execution_time = time_end - time_start
