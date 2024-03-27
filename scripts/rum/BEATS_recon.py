@@ -150,15 +150,26 @@ def main():
 	logging.info("BEATS reconstruction - {}.".format(dt_string))
 	logging.info("==================================================================================================================\n\n")
 
-	# output reconstruction directory
+	# output directories
+	# if not os.path.isdir(work_dir):
+	# 	logging.warning('Work directory does not exist. Will create it: {}'.format(work_dir))
+	# 	os.makedirs(work_dir, exist_ok=True)
+
 	if args.recon_dir is None:
 		recon_dir = work_dir + "/recon"
 	else:
 		recon_dir = args.recon_dir
 
+	recon_dir = os.path.join(recon_dir, "")
+
 	if not os.path.isdir(recon_dir):
 		logging.warning('Reconstruction directory does not exist. Will create it: {}'.format(recon_dir))
-		os.mkdir(recon_dir)
+		os.makedirs(recon_dir, exist_ok=True)
+
+		upper_dir = os.path.dirname(os.path.dirname(recon_dir))
+		# to make also the upper dir writeable on a remote machine
+		os.chmod(upper_dir, 0o0777)
+		os.chmod(recon_dir, 0o0777)
 
 	# read projections, darks, flats and angles
 	projs, flats, darks, _ = dxchange.read_aps_32id(args.h5file, exchange_rank=0, proj=args.proj, sino=args.sino)
@@ -216,7 +227,7 @@ def main():
 		elif 'large' in args.stripe_method:
 			# Remove large stripe artifacts from sinogram using Nghia Vo’s approach [B23] (algorithm 5).
 			logging.info("Remove large stripe artifacts from sinogram using Nghia Vo’s approach...\n")
-			projs = tomopy.prep.stripe.remove_dead_stripe(projs, snr=args.snr, size=args.size, drop_ratio=args.drop_ratio, norm=args.norm, ncore=args.ncore, nchunk=args.nchunk)
+			projs = tomopy.prep.stripe.remove_large_stripe(projs, snr=args.snr, size=args.size, drop_ratio=args.drop_ratio, norm=args.norm, ncore=args.ncore, nchunk=args.nchunk)
 		elif 'sorting' in args.stripe_method:
 			# Remove full and partial stripe artifacts from sinogram using Nghia Vo’s approach [B23] (algorithm 3). Suitable for removing partial stripes.
 			logging.info("Remove full and partial stripe artifacts from sinogram using Nghia Vo’s approach. Suitable for removing partial stripes...\n")
@@ -401,7 +412,6 @@ def main():
 		logging.info('Writing reconstructed dataset.\n')
 		logging.info('Dataset dtype: {}.\n'.format(str(recon.dtype)))
 		dxchange.writer.write_tiff_stack(recon, fname=recon_dir + '/slice.tiff', dtype=args.dtype, axis=0, digit=4, start=0, overwrite=True)
-		os.chmod(recon_dir, 0o0777)
 
 	if args.write_midplanes:
 		ru.writemidplanesDxchange(recon, os.path.dirname(recon_dir) + '.tiff', dtype=args.dtype)
