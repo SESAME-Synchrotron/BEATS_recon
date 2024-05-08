@@ -1,7 +1,11 @@
 /examples/solara/solara-test-portal/
 /keys/
 /.idea/
-/examples/.ipynb_checkpoints/
-/.ipynb_checkpoints/
 /tests/pippo/
-/config/.ipynb_checkpoints/
+*checkpoint.*
+/user_notebooks/BEATS_recon-phase_20235010.ipynb
+/user_notebooks/BEATS_recon-phase_AlHandawi.ipynb
+/user_notebooks/BEATS_recon_20235163.ipynb
+/user_notebooks/BEATS_recon_20240222-glass_petra+samah.ipynb
+/user_notebooks/BEATS_recon_20240227_20235125_neva.ipynb
+/user_notebooks/BEATS_recon_20240229_gonca_egyptian_blue.ipynb

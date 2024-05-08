@@ -30,8 +30,19 @@ from datetime import datetime
 #################################################################################
 
 def read_phase_retrieval_params(h5file):
-	pixel_size = dxchange.read_hdf5(h5file, '/measurement/instrument/camera/pixel_size')[0]
-	magnification = dxchange.read_hdf5(h5file, '/measurement/instrument/detection_system/objective/magnification')[0]
+	try:
+		pixel_size = dxchange.read_hdf5(h5file, '/measurement/instrument/camera/pixel_size')[0]
+		float(pixel_size)
+	except:
+		logging.error("Cannot read camera pixel_size from HDF5 file.")
+		pixel_size = 0
+
+	try:
+		magnification = dxchange.read_hdf5(h5file, '/measurement/instrument/detection_system/objective/magnification')[0]
+	except:
+		logging.error('Cannot read detector magnification from HDF5 file.')
+		magnification = 0
+
 	dist = dxchange.read_hdf5(h5file, '/measurement/instrument/detector_motor_stack/detector_z')[0]
 	energy = dxchange.read_hdf5(h5file, '/measurement/instrument/monochromator/energy')[0]
 
