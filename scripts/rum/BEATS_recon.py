@@ -9,7 +9,7 @@ For more information, call this script with the help option:
 
 __author__ = ['Gianluca Iori']
 __date_created__ = '2023-05-15'
-__date__ = '2024-02-27'
+__date__ = '2024-05-09'
 __copyright__ = 'Copyright (c) 2024, SESAME'
 __docformat__ = 'restructuredtext en'
 __license__ = "MIT"
@@ -185,6 +185,10 @@ def main():
 	# read projections, darks, flats and angles
 	projs, flats, darks, _ = dxchange.read_aps_32id(args.h5file, exchange_rank=0, proj=args.proj, sino=args.sino)
 	theta = np.radians(dxchange.read_hdf5(args.h5file, 'exchange/theta', slc=(args.proj,)))
+
+	# TODO: remove the two lines above and uncomment the following one:
+	# ONLY WHEN A NEW module TOMOPY is available with update version of package dxchange containing read_sesame_beats method
+	# projs, flats, darks, theta = dxchange.read_sesame_beats(args.h5file, exchange_rank=0, proj=args.proj, sino=args.sino)
 
 	# separate flat field file
 	if args.flats_separate:
