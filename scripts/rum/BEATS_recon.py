@@ -32,7 +32,7 @@ from datetime import datetime
 def read_phase_retrieval_params(h5file):
 	try:
 		pixel_size = dxchange.read_hdf5(h5file, '/measurement/instrument/camera/pixel_size')[0]
-		float(pixel_size)
+		pixel_size = float(pixel_size)
 	except:
 		logging.error("Cannot read camera pixel_size from HDF5 file.")
 		pixel_size = 0
@@ -70,6 +70,8 @@ def main():
 	parser = argparse.ArgumentParser(description=description, epilog=epilog,
 									formatter_class=argparse.RawDescriptionHelpFormatter)
 	parser.add_argument('h5file', type=str, help='<Required> Input HDF5 filename (projection data).')
+	parser.add_argument('-hts', '--h5file_to_subtract', default=None, type=str, help='A second HDF5 file that should be used to build a difference to the first file supplied. --- For the moment this only works if they both have their own flat and dark field.')
+
 	parser.add_argument('-p', '--proj', type=int, default=None, nargs='+', help='Specify projections to read. (start, end, step)')
 	parser.add_argument('-s', '--sino', type=int, default=None, nargs='+', help='Specify sinograms to read. (start, end, step)')
 	parser.add_argument('--work_dir', type=str, default=None, help='Work folder.')
@@ -152,8 +154,16 @@ def main():
 	else:
 		work_dir = args.work_dir
 
+	# output directories
+	if not os.path.isdir(work_dir):
+		logging.warning('Work directory does not exist. Will create it: {}'.format(work_dir))
+		os.makedirs(work_dir, exist_ok=True)
+		os.chmod(work_dir, 0o0777)
+
 	time_start = time()
-	logging.basicConfig(filename=work_dir + '/' + os.path.splitext(os.path.basename(args.h5file))[0] + '_recon.log', level=logging.DEBUG)
+	log_file = f"{os.path.splitext(os.path.basename(args.h5file))[0]}_recon.log"
+	log_file = os.path.join(work_dir, log_file)
+	logging.basicConfig(filename=log_file, level=logging.DEBUG)
 	now = datetime.now()
 	dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
 	logging.info('\n')
@@ -161,10 +171,6 @@ def main():
 	logging.info("BEATS reconstruction - {}.".format(dt_string))
 	logging.info("==================================================================================================================\n\n")
 
-	# output directories
-	# if not os.path.isdir(work_dir):
-	# 	logging.warning('Work directory does not exist. Will create it: {}'.format(work_dir))
-	# 	os.makedirs(work_dir, exist_ok=True)
 
 	if args.recon_dir is None:
 		recon_dir = work_dir + "/recon"
@@ -306,6 +312,14 @@ def main():
 		# Perform - log transform
 		logging.info("Applying - log transform.\n")
 		projs = tomopy.minus_log(projs, ncore=args.ncore)
+
+	if args.h5file_to_subtract:
+		# ATTENTION::: For the moment this only works if they both have their own flat and dark field.
+		projs_to_sub, flats_to_sub, darks_to_sub, _ = dxchange.read_aps_32id(args.h5file_to_subtract, exchange_rank=0,
+																				 proj=args.proj, sino=args.sino)
+		projs_to_sub = tomopy.normalize(projs_to_sub, flats_to_sub, darks_to_sub, ncore=args.ncore)
+		projs_to_sub = tomopy.minus_log(projs_to_sub, ncore=args.ncore)
+		projs = projs - projs_to_sub# + np.abs(np.amin(projs_to_sub))*1.05
 
 	# Center Of Rotation (COR)
 	if args.fullturn:
