@@ -13,3 +13,4 @@
 /user_notebooks/BEATS_recon_20240513_20235045_mahnke.ipynb
 *.DS_Store
 .gitignore
+/scripts/rum/recon_utils
