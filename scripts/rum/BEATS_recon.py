@@ -9,7 +9,7 @@ For more information, call this script with the help option:
 
 __author__ = ["Gianluca Iori"]
 __date_created__ = "2023-05-15"
-__date__ = "2024-10-29"
+__date__ = "2024-10-30"
 __copyright__ = "Copyright (c) 2024, SESAME"
 __docformat__ = "restructuredtext en"
 __license__ = "MIT"
@@ -277,6 +277,18 @@ def main():
         dest="output",
         action="store_true",
         help="Write output reconstructed dataset.",
+    )
+    parser.add_argument(
+        "--output_format",
+        type=str,
+        default=".tiff",
+        help="Reconstruction slices output format. Options are: .tiff (default), .jp2 (Compressed JPEG 2000).",
+    )
+    parser.add_argument(
+        "--output_compression",
+        type=int,
+        default=10,
+        help="Reconstruction slices output compression. Only available for .jp2 (Compressed JPEG 2000) output format.",
     )
     parser.add_argument(
         "--no-output",
@@ -794,16 +806,33 @@ def main():
 
     if args.output:
         logging.info("Writing reconstructed dataset.\n")
-        logging.info("Dataset dtype: {}.\n".format(str(recon.dtype)))
-        dxchange.writer.write_tiff_stack(
-            recon,
-            fname=recon_dir + "/slice.tiff",
-            dtype=args.dtype,
-            axis=0,
-            digit=4,
-            start=0,
-            overwrite=True,
-        )
+        logging.info("Output dataset dtype: {}.\n".format(str(recon.dtype)))
+        logging.info("Output image stack format: {}.\n".format(args.output_format))
+        matches = ["jp2", "jpeg2000", ".jp2"]
+
+        if any(x in args.output_format for x in matches):
+            ru.write_jpeg2000_stack(
+                recon,
+                fname=recon_dir + "/slice.jp2",
+                dtype=args.dtype,
+                axis=0,
+                digit=4,
+                start=0,
+                nthreads=args.ncore,
+                compratio=args.output_compression,
+                overwrite=True,
+            )
+
+        else:
+            dxchange.writer.write_tiff_stack(
+                recon,
+                fname=recon_dir + "/slice.tiff",
+                dtype=args.dtype,
+                axis=0,
+                digit=4,
+                start=0,
+                overwrite=True,
+            )
 
     if args.write_midplanes:
         ru.writemidplanesDxchange(
