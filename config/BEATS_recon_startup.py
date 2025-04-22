@@ -35,3 +35,5 @@ ncore = 36
 from IPython.core.display import HTML
 table_css = 'table {align:left;display:block} '
 HTML('<style>{}</style>'.format(table_css))
+
+print('Loaded TomoPy recon startup configuration for SESAME BEATS')
